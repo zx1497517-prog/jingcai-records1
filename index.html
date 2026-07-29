@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>我的竞彩记录</title>
+<title>竞彩 · 分析与记账</title>
 <style>
   /* ===== 基础设置 ===== */
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -195,6 +195,38 @@
   }
   .toast.show { opacity: 1; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* ===== 分析台 ===== */
+  .ana-card { padding: 14px; }
+  .ana-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .ana-no { font-weight: 700; font-size: 13px; color: var(--green-dark); }
+  .ana-league { font-size: 12px; color: var(--muted); }
+  .ana-time { font-size: 12px; color: var(--muted); margin-left: auto; }
+  .ana-level { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; color: #fff; }
+  .ana-level.l1 { background: var(--green); }
+  .ana-level.l2 { background: var(--draw); }
+  .ana-level.l3 { background: var(--red); }
+  .ana-match { font-size: 18px; font-weight: 700; text-align: center; margin: 6px 0 12px; }
+  .ana-match span { color: var(--muted); font-size: 13px; font-weight: 400; margin: 0 6px; }
+  .ana-prob { margin-bottom: 10px; }
+  .prob-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
+  .prob-row .pn { width: 22px; color: var(--muted); }
+  .prob-row .pbar { flex: 1; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
+  .prob-row .pbar i { display: block; height: 100%; border-radius: 6px; }
+  .prob-row .pv { width: 34px; text-align: right; font-weight: 600; }
+  .ana-ev { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; font-size: 11px; color: var(--muted); }
+  .ana-ev b { font-weight: 700; }
+  .ev-pos { color: var(--green); }
+  .ev-neg { color: var(--red); }
+  .ana-rec { background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  .ana-rec .rec-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .ana-rec ul { margin: 0; padding-left: 16px; font-size: 13px; }
+  .ana-rec li { margin-bottom: 3px; }
+  .ana-rec .rec-main { color: var(--green-dark); font-weight: 700; }
+  .ana-note { font-size: 12px; color: #374151; line-height: 1.5; margin-bottom: 8px; }
+  .ana-warn { font-size: 11px; color: var(--draw); background: #fffbeb; border-radius: 8px; padding: 6px 8px; margin-bottom: 10px; }
+  .ana-add { background: var(--green); color: #fff; border: none; }
+  .ana-add:active { background: var(--green-dark); }
 </style>
 </head>
 <body>
@@ -202,12 +234,21 @@
 
   <!-- 顶部标题 -->
   <div class="header">
-    <h1>⚽ 我的竞彩记录</h1>
-    <p>个人使用 · 数据只存在你的浏览器里</p>
+    <h1>⚽ 竞彩 · 分析与记账</h1>
+    <p>看分析 → 记一笔 → 自动算盈亏</p>
   </div>
 
+  <!-- ===== 分析台（合并入口，默认首屏） ===== -->
+  <section id="view-analysis" class="view active">
+    <div class="card" style="margin-top:14px;">
+      <h2>📡 竞彩分析台</h2>
+      <p class="hint">模型估算，临场请以竞彩官方最新值为准。点卡片下方「记一笔」可把推荐直接带入记账。</p>
+    </div>
+    <div id="analysis-box"></div>
+  </section>
+
   <!-- ===== 首页 ===== -->
-  <section id="view-home" class="view active">
+  <section id="view-home" class="view">
     <div class="stat-grid">
       <div class="stat"><div class="num" id="home-count">0</div><div class="label">总笔数</div></div>
       <div class="stat"><div class="num" id="home-profit">¥0</div><div class="label">总盈亏</div></div>
@@ -258,7 +299,7 @@
       </div>
       <div class="field">
         <label>备注（可选）</label>
-        <textarea id="f-note" placeholder="例如：感觉稳 / 跟风"></textarea>
+        <textarea id="f-note" placeholder="例如：来自分析台 周三001 / 感觉稳"></textarea>
       </div>
       <button class="btn-primary" onclick="saveBet()">保存</button>
     </div>
@@ -294,7 +335,8 @@
 
   <!-- 底部导航 -->
   <nav class="nav">
-    <button class="active" data-view="home" onclick="show('home', this)"><span class="ico">🏠</span>首页</button>
+    <button class="active" data-view="analysis" onclick="show('analysis', this)"><span class="ico">🔍</span>分析</button>
+    <button data-view="home" onclick="show('home', this)"><span class="ico">🏠</span>首页</button>
     <button data-view="add" onclick="show('add', this)"><span class="ico">➕</span>新增</button>
     <button data-view="list" onclick="show('list', this)"><span class="ico">📋</span>列表</button>
     <button data-view="stat" onclick="show('stat', this)"><span class="ico">📊</span>统计</button>
@@ -342,6 +384,78 @@
     }
   }
 
+  // ===== 分析台数据（复刻自竞彩分析台，结构化以便「记一笔」对接）=====
+  // prob = [胜, 平, 客] 概率；ev = {win, draw, lose} 对应 胜/平/负 EV
+  // pick = 胜平负首选（带入记账用）；pickOdds = 推荐项赔率（无则不填）
+  var ANALYSIS = [
+    {
+      no: "周三001", league: "欧冠资格赛", time: "今晚 23:00",
+      home: "凯拉特", away: "奥莫尼亚",
+      level: "Level 3 险", tag: "诱盘（诱主）",
+      prob: [38, 34, 28], l1: "主 / 平 / 客",
+      ev: { win: -25.5, draw: 8.8, lose: -0.6 },
+      pick: "平", pickOdds: null,
+      picks: ["胜平负 → 平（首选）", "让球(-1) → 负", "比分 1-1 / 0-1 / 防 1-0", "总进球 小2.5（2球以下）"],
+      note: "首回合客场0-1负；主力射手伤缺。奥莫尼亚握1球优势可摆大巴，历史交锋3场共1球。竞彩主胜为全市场最低，去水后仍偏高约7pp，校准4诱主成立。",
+      warning: "小联赛×2 + 人工草 + 高原 + 深夜场 · 部分赔率为预估，临场请改为竞彩最新值"
+    },
+    {
+      no: "周三002", league: "欧冠资格赛", time: "今晚（次回合）",
+      home: "波兹南莱赫", away: "奥胡斯",
+      level: "Level 1 稳", tag: "真强势",
+      prob: [62, 23, 15], l1: "主 / 平 / 客",
+      ev: { win: -22.5, draw: 26.5, lose: 35.0 },
+      pick: "胜", pickOdds: null,
+      picks: ["胜平负 → 主胜（核心胆）", "比分 2-0 / 2-1 / 防 3-1", "总进球 2-3 球", "半全场 胜胜"],
+      note: "首回合客场4-1净胜3球，翻盘概率<2%（校准5）。奥胡斯门将停赛+中轴伤停，近19个欧战客场仅1胜。盘口与基本面同向（校准12）。",
+      warning: "唯一变量：波兹南轮换控场 · 部分赔率为预估，临场请改为竞彩最新值"
+    },
+    {
+      no: "周三003", league: "巴甲·保级战", time: "明晨 06:30",
+      home: "米拉索", away: "雷莫",
+      level: "Level 3 险", tag: "偏诱主",
+      prob: [40, 31, 29], l1: "主 / 平 / 客",
+      ev: { win: -40.0, draw: 17.8, lose: 45.0 },
+      pick: "平", pickOdds: 3.80,
+      picks: ["胜平负 → 平 3.80（今日最佳EV单项）", "比分 1-1 / 2-1 / 防 1-2", "总进球 2-3 球", "半全场 平平"],
+      note: "米拉索三门出战+前锋伤缺；雷莫队长解禁、门神状态火热但客防差。主胜1.50显著低于主流1.66-1.73，去水后仍偏低≥6pp，校准4诱主。",
+      warning: "保级压力 + 门将危机"
+    },
+    {
+      no: "周三004", league: "巴甲", time: "明晨 06:30",
+      home: "巴西国际", away: "弗拉门戈",
+      level: "Level 1 稳", tag: "真强势（客）",
+      prob: [17, 26, 57], l1: "主 / 平 / 客",
+      ev: { win: -18.4, draw: -11.6, lose: -7.1 },
+      pick: "负", pickOdds: null,
+      picks: ["胜平负 → 客胜（串关腿）", "让球(+1) 负 3.10 小仓搏净胜2球", "比分 0-2 / 1-2 / 防 1-1", "半全场 负负"],
+      note: "国际4连败、主场巴甲倒数第二；弗拉门戈攻防两端联赛最强，对国际8场不败。亚盘客让平半升半球水位健康，与基本面同向。",
+      warning: "客胜赔率偏薄，宜作串关腿而非重注单关 · 部分赔率为预估，临场请改为竞彩最新值"
+    },
+    {
+      no: "周三005", league: "巴甲·卡位战", time: "明晨 08:30",
+      home: "弗鲁米嫩塞", away: "巴伊亚",
+      level: "Level 2 中", tag: "暂真强势·降半档",
+      prob: [46, 31, 23], l1: "主 / 平 / 客",
+      ev: { win: -5.7, draw: -3.9, lose: -21.8 },
+      pick: "胜", pickOdds: null,
+      picks: ["胜平负 → 主胜，平局防守", "比分 1-0 / 2-0 / 防 1-1", "总进球 小（2球左右）", "半全场 平胜 / 胜胜"],
+      note: "弗鲁近3轮不胜、射手停赛但蒂亚戈·席尔瓦回归；巴伊亚两主力后卫停赛防线重组、近4客场不胜。亚盘数据缺失，临场务必核盘。",
+      warning: "盘口缺失场次不上重仓 · 部分赔率为预估，临场请改为竞彩最新值"
+    },
+    {
+      no: "周三006", league: "巴甲", time: "明晨 08:30",
+      home: "维多利亚", away: "帕尔梅拉斯",
+      level: "Level 3 险", tag: "信息冲突·无法定性",
+      prob: [22, 31, 47], l1: "主 / 平 / 客",
+      ev: { win: -3.2, draw: 8.5, lose: -19.2 },
+      pick: "负", pickOdds: null,
+      picks: ["胜平负 → 客胜为主、平局必防", "稳妥打法：让球(+1)主不败对冲或直接跳过", "比分 0-1 / 1-2 / 防 1-1", "半全场 平负 / 负负"],
+      note: "帕尔梅拉斯榜首+对维多利亚近5战全胜，但多线作战有轮换。维多利亚主场数据两个情报源冲突，需临场核实。榜首客战主场龙是巴甲经典冷门温床。",
+      warning: "情报冲突 + 轮换风险 → 小仓或跳过 · 部分赔率为预估，临场请改为竞彩最新值"
+    }
+  ];
+
   // ===== 页面切换 =====
   function show(name, btn) {
     var views = document.querySelectorAll(".view");
@@ -353,10 +467,72 @@
     if (name === "home") renderHome();
     if (name === "list") renderList();
     if (name === "stat") renderStat();
+    if (name === "analysis") renderAnalysis();
   }
   function goAdd() {
     var btn = document.querySelector('.nav button[data-view="add"]');
     show("add", btn);
+  }
+
+  // ===== 分析台渲染 =====
+  function renderAnalysis() {
+    var box = document.getElementById("analysis-box");
+    if (!box) return;
+    var probNames = ["胜", "平", "客"];
+    var probColors = ["var(--green)", "var(--draw)", "var(--lose)"];
+    box.innerHTML = ANALYSIS.map(function (a, i) {
+      var lvlClass = a.level.indexOf("Level 1") >= 0 ? "l1" : (a.level.indexOf("Level 2") >= 0 ? "l2" : "l3");
+      var probHtml = a.prob.map(function (p, k) {
+        return '<div class="prob-row"><span class="pn">' + probNames[k] + '</span>' +
+          '<div class="pbar"><i style="width:' + p + '%;background:' + probColors[k] + '"></i></div>' +
+          '<span class="pv">' + p + '%</span></div>';
+      }).join("");
+      function evTag(v) { return (v >= 0 ? "+" : "") + v + "%"; }
+      var evHtml = '<div class="ana-ev">' +
+        '<span>主胜 <b class="' + (a.ev.win >= 0 ? "ev-pos" : "ev-neg") + '">EV ' + evTag(a.ev.win) + '</b></span>' +
+        '<span>平 <b class="' + (a.ev.draw >= 0 ? "ev-pos" : "ev-neg") + '">EV ' + evTag(a.ev.draw) + '</b></span>' +
+        '<span>客胜 <b class="' + (a.ev.lose >= 0 ? "ev-pos" : "ev-neg") + '">EV ' + evTag(a.ev.lose) + '</b></span>' +
+        '</div>';
+      var recHtml = '<div class="ana-rec"><div class="rec-title">L1 独立预判：' + esc(a.l1) + '</div><ul>' +
+        a.picks.map(function (t) {
+          var cls = (t.indexOf("首选") >= 0 || t.indexOf("核心胆") >= 0) ? ' class="rec-main"' : '';
+          return '<li' + cls + '>' + esc(t) + '</li>';
+        }).join("") + '</ul></div>';
+      return '<div class="card ana-card">' +
+        '<div class="ana-top"><span class="ana-no">' + a.no + '</span>' +
+        '<span class="ana-league">' + esc(a.league) + '</span>' +
+        '<span class="ana-time">' + esc(a.time) + '</span>' +
+        '<span class="ana-level ' + lvlClass + '">' + esc(a.level + (a.tag ? " · " + a.tag : "")) + '</span></div>' +
+        '<div class="ana-match">' + esc(a.home) + '<span>VS</span>' + esc(a.away) + '</div>' +
+        probHtml + evHtml + recHtml +
+        '<div class="ana-note">' + esc(a.note) + '</div>' +
+        '<div class="ana-warn">⚠ ' + esc(a.warning) + '</div>' +
+        '<button type="button" class="btn-mini ana-add" onclick="prefillFromAnalysis(' + i + ')">📝 记一笔（带入推荐）</button>' +
+        '</div>';
+    }).join("");
+  }
+
+  // ===== 记一笔：把分析推荐带入记账表单 =====
+  function prefillFromAnalysis(i) {
+    var a = ANALYSIS[i];
+    document.getElementById("f-match").value = a.league + " " + a.home + " vs " + a.away;
+    document.getElementById("f-odds").value = a.pickOdds ? a.pickOdds : "";
+    document.getElementById("f-note").value = a.no + " 分析推荐：" + a.pick + (a.pickOdds ? " @" + a.pickOdds : "");
+    // 选中胜平负
+    selectedPick = a.pick;
+    var btns = document.querySelectorAll(".pick button");
+    for (var k = 0; k < btns.length; k++) {
+      if (btns[k].getAttribute("data-pick") === a.pick) btns[k].classList.add("active");
+      else btns[k].classList.remove("active");
+    }
+    // 清空联网选择的比赛引用，避免写入错误 matchId
+    selectedMatch = null;
+    var ml = document.getElementById("match-list"); if (ml) ml.innerHTML = "";
+    // 切到新增视图
+    show("add", document.querySelector('.nav button[data-view="add"]'));
+    toast(a.pickOdds
+      ? ("已带入「" + a.no + "」· 赔率已填，补全金额即可保存")
+      : ("已带入「" + a.no + "」· 请补全赔率和金额"));
   }
 
   // ===== 胜平负选择 =====
@@ -619,6 +795,7 @@
     var d = new Date().toISOString().slice(0, 10);
     document.getElementById("f-date").value = d;
   })();
+  renderAnalysis();
   renderHome();
   refreshResults(true);
 </script>
