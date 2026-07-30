@@ -5,799 +5,1100 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>竞彩 · 分析与记账</title>
 <style>
-  /* ===== 基础设置 ===== */
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   :root {
-    --green: #16a34a;
-    --green-dark: #15803d;
-    --green-soft: #dcfce7;
-    --bg: #f4f6f8;
-    --card: #ffffff;
-    --text: #1f2933;
-    --muted: #6b7280;
-    --line: #e5e7eb;
-    --red: #dc2626;
-    --red-soft: #fee2e2;
-    --win: #16a34a;
-    --draw: #d97706;
-    --lose: #2563eb;
+    --bg: #0d1117; --bg2: #010409; --card: #161b22; --card2: #1c2128;
+    --line: #2d333b; --line2: #373e47;
+    --text: #e6edf3; --muted: #8b949e; --muted2: #6e7681;
+    --brand: #2ea043; --brand2: #238636; --brand-soft: rgba(46,160,67,.16);
+    --gold: #d4a843; --gold-soft: rgba(212,168,67,.14);
+    --win: #3fb950; --draw: #d29922; --lose: #58a6ff;
+    --red: #f85149; --red-soft: rgba(248,81,73,.14);
+    --green: #3fb950; --green-soft: rgba(63,185,80,.14);
+    --pt-had: #58a6ff; --pt-hhad: #bc8cff; --pt-hf: #d29922; --pt-score: #f778ba;
+    --radius: 16px; --shadow: 0 6px 20px rgba(0,0,0,.35);
   }
   html, body { margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
+    background: radial-gradient(1200px 600px at 50% -10%, #16241c 0%, var(--bg) 55%) fixed;
+    color: var(--text); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; padding-bottom: 76px; }
 
-  /* ===== 手机一样的居中容器（电脑上也好看） ===== */
-  .app {
-    max-width: 480px;
-    margin: 0 auto;
-    background: var(--bg);
-    min-height: 100vh;
-    position: relative;
-    padding-bottom: 76px; /* 给底部导航留位置 */
-  }
+  .header { background: linear-gradient(135deg, #1f6f3a 0%, #16432a 100%); color: #fff; padding: 22px 18px 18px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 14px rgba(0,0,0,.4); }
+  .header h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: .5px; display: flex; align-items: center; gap: 8px; }
+  .header p { margin: 4px 0 0; font-size: 12px; opacity: .82; }
+  .back-btn { background: rgba(255,255,255,.12); border: none; color: #fff; font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 20px; margin-bottom: 8px; display: inline-block; }
+  .back-btn:active { background: rgba(255,255,255,.22); }
 
-  /* ===== 顶部标题条 ===== */
-  .header {
-    background: var(--green);
-    color: #fff;
-    padding: 18px 16px 16px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .header h1 { margin: 0; font-size: 19px; font-weight: 600; }
-  .header p { margin: 2px 0 0; font-size: 12px; opacity: .9; }
-
-  /* ===== 页面容器 ===== */
   .view { display: none; padding: 16px; }
-  .view.active { display: block; }
+  .view.active { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: .35; transform: translateY(6px);} to { opacity:1; transform:none; } }
 
-  /* ===== 卡片 ===== */
-  .card {
-    background: var(--card);
-    border-radius: 14px;
-    padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-    margin-bottom: 14px;
-  }
-  .card h2 { margin: 0 0 12px; font-size: 15px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
+  .card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .card h3 { margin: 12px 0 8px; font-size: 13px; color: var(--muted); font-weight: 600; }
 
-  /* ===== 首页统计小卡 ===== */
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .stat {
-    background: var(--card);
-    border-radius: 14px;
-    padding: 14px 10px;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-  .stat .num { font-size: 20px; font-weight: 700; color: var(--green-dark); }
-  .stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .match-card { background: linear-gradient(160deg, var(--card2), var(--card)); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 13px; box-shadow: var(--shadow); cursor: pointer; transition: transform .12s, border-color .12s; position: relative; overflow: hidden; }
+  .match-card:active { transform: scale(.975); border-color: var(--brand); }
+  .mc-league { font-size: 11px; color: var(--brand); font-weight: 600; margin-bottom: 6px; }
+  .mc-num { font-size: 11px; color: var(--muted); float: right; font-variant-numeric: tabular-nums; }
+  .mc-time { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .mc-vs { font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 10px; line-height: 1.4; }
+  .mc-odds { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+  .mc-odds div { text-align: center; font-size: 12px; padding: 6px 0; border-radius: 9px; background: rgba(255,255,255,.04); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mc-odds .ow { color: var(--win); } .mc-odds .od { color: var(--draw); } .mc-odds .ol { color: var(--lose); }
+  .mc-single { position: absolute; top: 9px; right: 9px; font-size: 10px; background: var(--red-soft); color: var(--red); padding: 1px 7px; border-radius: 8px; font-weight: 700; }
+  .mc-level { position: absolute; bottom: 9px; right: 9px; font-size: 10px; padding: 1px 7px; border-radius: 8px; color: #fff; font-weight: 700; }
 
-  /* ===== 大按钮 ===== */
-  .btn-primary {
-    display: block; width: 100%; border: none; background: var(--green);
-    color: #fff; font-size: 16px; font-weight: 600; padding: 14px;
-    border-radius: 12px; cursor: pointer; margin-top: 4px;
-  }
-  .btn-primary:active { background: var(--green-dark); }
+  .filter-bar { display: flex; gap: 7px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; }
+  .filter-tag { border: 1px solid var(--line); background: var(--card); border-radius: 20px; padding: 5px 14px; font-size: 13px; white-space: nowrap; cursor: pointer; font-family: inherit; color: var(--muted); font-weight: 500; }
+  .filter-tag.active { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
 
-  /* 加载比赛按钮 + 选项 */
-  .btn-mini {
-    width: 100%; border: 1px solid var(--green); background: #fff; color: var(--green);
-    border-radius: 10px; padding: 10px; font-size: 14px; cursor: pointer; font-weight: 600;
-  }
-  .btn-mini:active { background: var(--green-soft); }
-  .match-opt {
-    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
-    margin-bottom: 8px; cursor: pointer; background: #fff;
-  }
-  .match-opt:active { background: var(--green-soft); }
-  .match-opt.active { border-color: var(--green); background: var(--green-soft); }
-  .match-opt .lg { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
+  .detail-match-num { font-size: 15px; font-weight: 700; color: var(--brand); }
+  .detail-title { text-align: center; font-size: 18px; font-weight: 700; margin: 14px 0 16px; letter-spacing: 1px; }
+  .level-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: #fff; }
 
-  /* ===== 表单 ===== */
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .field input, .field textarea {
-    width: 100%; border: 1px solid var(--line); border-radius: 10px;
-    padding: 11px 12px; font-size: 15px; background: #fff; color: var(--text);
-    font-family: inherit;
-  }
-  .field input:focus, .field textarea:focus { outline: none; border-color: var(--green); }
-  .field textarea { resize: vertical; min-height: 56px; }
+  .prob-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 14px; }
+  .prob-label { width: 28px; font-weight: 600; }
+  .prob-label.pw { color: var(--win); } .prob-label.pd { color: var(--draw); } .prob-label.pl { color: var(--lose); }
+  .prob-track { flex: 1; background: var(--bg2); border-radius: 10px; height: 22px; overflow: hidden; position: relative; border: 1px solid var(--line); }
+  .prob-fill { height: 100%; border-radius: 10px; }
+  .prob-fill.bw { background: linear-gradient(90deg,#2ea043,#3fb950); } .prob-fill.bd { background: linear-gradient(90deg,#b8860b,#d29922); } .prob-fill.bl { background: linear-gradient(90deg,#388bfd,#58a6ff); }
+  .prob-pct { width: 44px; text-align: right; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .ev-row { font-size: 13px; margin-top: 4px; color: var(--muted); }
+  .ev-val { font-weight: 700; font-variant-numeric: tabular-nums; } .ev-pos { color: var(--green); } .ev-neg { color: var(--red); }
 
-  /* ===== 胜平负选择（三段按钮） ===== */
-  .pick { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .pick button {
-    border: 1px solid var(--line); background: #fff; border-radius: 10px;
-    padding: 12px 0; font-size: 15px; cursor: pointer; color: var(--text);
-  }
-  .pick button.active { background: var(--green); color: #fff; border-color: var(--green); font-weight: 600; }
+  .field { margin-bottom: 11px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field textarea, .field select { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; background: var(--bg2); color: var(--text); font-family: inherit; }
+  .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--brand); }
+  .field textarea { resize: vertical; min-height: 44px; }
+  .inline-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .hint { font-size: 12px; color: var(--muted2); margin-top: 6px; }
 
-  /* ===== 列表 ===== */
-  .bet-item {
-    background: var(--card); border-radius: 14px; padding: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06); margin-bottom: 12px;
-    position: relative;
-  }
-  .bet-main { flex: 1; min-width: 0; }
-  .bet-match { font-size: 15px; font-weight: 600; }
-  .bet-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .bet-amount { font-size: 15px; font-weight: 700; white-space: nowrap; }
-  .badge {
-    display: inline-block; font-size: 12px; font-weight: 600;
-    padding: 2px 9px; border-radius: 20px; color: #fff; margin-right: 6px;
-  }
-  .badge.sheng { background: var(--win); }
-  .badge.ping { background: var(--draw); }
-  .badge.fu { background: var(--lose); }
-  .del {
-    position: absolute; top: 10px; right: 10px;
-    border: none; background: var(--red-soft); color: var(--red);
-    width: 30px; height: 30px; border-radius: 50%; font-size: 16px;
-    cursor: pointer;
-  }
-  /* ===== 结算 ===== */
-  .settle-row { display: flex; gap: 6px; margin-top: 10px; }
-  .settle-btn {
-    flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 8px;
-    padding: 8px 0; font-size: 13px; cursor: pointer; color: var(--text);
-  }
-  .settle-btn:active { background: var(--green-soft); }
-  .outcome {
-    display: inline-block; font-size: 12px; font-weight: 600;
-    padding: 2px 9px; border-radius: 20px; color: #fff;
-  }
-  .outcome.win { background: var(--green); }
-  .outcome.lose { background: var(--red); }
-  .profit { font-size: 13px; font-weight: 700; margin-top: 6px; }
-  .profit.pos { color: var(--green); }
-  .profit.neg { color: var(--red); }
-  .re-settle {
-    font-size: 12px; color: var(--green); margin-left: 8px;
-    background: none; border: none; padding: 0; cursor: pointer;
-  }
+  .layer-box { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 12px; background: var(--bg2); }
+  .layer-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--brand); }
+  .bfds-dim { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+  .bfds-dim .bn { width: 92px; flex-shrink: 0; font-weight: 600; }
+  .bfds-dim select { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font-size: 13px; background: var(--bg2); color: var(--text); }
+  .bfds-dim .bw { width: 42px; text-align: center; color: var(--muted); font-size: 12px; }
+  .bfds-crit { font-size: 11px; color: var(--muted2); margin: -4px 0 8px 100px; }
 
-  /* ===== 统计条 ===== */
-  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13px; }
-  .bar-row .name { width: 36px; color: var(--muted); }
-  .bar-track { flex: 1; background: var(--line); border-radius: 8px; height: 14px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 8px; }
-  .bar-row .val { width: 28px; text-align: right; font-weight: 600; }
+  .level-result { text-align: center; padding: 14px; border-radius: 12px; margin: 12px 0; border: 1px solid var(--line); }
+  .level-num { font-size: 32px; font-weight: 800; }
+  .level-cmd { font-size: 13px; margin-top: 4px; }
 
-  .empty { text-align: center; color: var(--muted); padding: 30px 0; font-size: 14px; }
+  .cal-list { max-height: 230px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; padding: 6px; background: var(--bg2); }
+  .cal-item { display: flex; gap: 8px; padding: 7px 4px; font-size: 12px; border-bottom: 1px solid var(--line); cursor: pointer; align-items: flex-start; }
+  .cal-item:last-child { border-bottom: none; }
+  .cal-item input { margin-top: 3px; flex-shrink: 0; accent-color: var(--brand); }
+  .cal-item .ct { color: var(--text); line-height: 1.5; }
+  .cal-item.on .ct { color: var(--brand); font-weight: 600; }
 
-  /* ===== 底部导航 ===== */
-  .nav {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 480px; background: #fff;
-    border-top: 1px solid var(--line); display: flex; z-index: 20;
-  }
-  .nav button {
-    flex: 1; border: none; background: none; padding: 8px 0 6px;
-    font-size: 12px; color: var(--muted); cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-  }
-  .nav button .ico { font-size: 20px; line-height: 1; }
-  .nav button.active { color: var(--green); font-weight: 600; }
+  .play-tabs { display: flex; gap: 0; margin-bottom: 12px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .play-tab { flex: 1; padding: 9px 4px; border: none; background: var(--card); color: var(--muted); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .play-tab.active { background: var(--brand); color: #fff; }
+  .opt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .opt-btn { border: 2px solid var(--line); background: var(--card); border-radius: 10px; padding: 10px 0; font-size: 14px; cursor: pointer; color: var(--text); font-weight: 600; text-align: center; }
+  .opt-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .opt-btn.score { font-size: 13px; padding: 8px 0; }
+  .handicap-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .handicap-row label { font-size: 13px; color: var(--muted); }
+  .handicap-row select { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-size: 14px; background: var(--bg2); color: var(--text); }
 
-  /* ===== 小提示 ===== */
-  .toast {
-    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%);
-    background: rgba(31,41,51,.92); color: #fff; padding: 10px 18px;
-    border-radius: 22px; font-size: 13px; z-index: 50; opacity: 0;
-    transition: opacity .25s; pointer-events: none;
-  }
+  .btn-primary { display: block; width: 100%; border: none; background: linear-gradient(135deg, var(--brand), var(--brand2)); color: #fff; font-size: 16px; font-weight: 600; padding: 13px; border-radius: 12px; cursor: pointer; margin-top: 4px; box-shadow: 0 4px 12px rgba(46,160,67,.25); }
+  .btn-primary:active { filter: brightness(.92); }
+  .btn-outline { display: block; width: 100%; border: 1.5px solid var(--brand); background: transparent; color: var(--brand); font-size: 15px; font-weight: 600; padding: 11px; border-radius: 12px; cursor: pointer; }
+  .btn-outline:active { background: var(--brand-soft); }
+  .btn-gold { display: block; width: 100%; border: none; background: linear-gradient(135deg, var(--gold), #b8860b); color: #1a1300; font-size: 15px; font-weight: 700; padding: 11px; border-radius: 12px; cursor: pointer; }
+
+  .capital-card { background: linear-gradient(135deg, #1c2b22, #161b22); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px; }
+  .capital-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .capital-balance { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .5px; }
+  .capital-balance.pos { color: var(--green); } .capital-balance.neg { color: var(--red); }
+  .capital-label { font-size: 12px; color: var(--muted); }
+  .capital-edit { font-size: 12px; color: var(--brand); background: none; border: 1px solid var(--line); border-radius: 16px; padding: 5px 12px; cursor: pointer; }
+  .mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .mini { text-align: center; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 4px; }
+  .mini-num { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mini-num.green { color: var(--green); } .mini-num.red { color: var(--red); } .mini-num.gold { color: var(--gold); }
+  .mini-label { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .stat-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .stat-card h3 { margin: 0 0 10px; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .play-stat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12.5px; }
+  .play-stat-name { width: 64px; flex-shrink: 0; font-weight: 600; }
+  .play-stat-bar { flex: 1; height: 14px; background: var(--bg2); border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  .play-stat-fill { height: 100%; border-radius: 8px; }
+  .play-stat-val { width: 96px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .streak-box { display: flex; gap: 10px; }
+  .streak-item { flex: 1; text-align: center; background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  .streak-num { font-size: 22px; font-weight: 800; }
+  .streak-num.win { color: var(--green); } .streak-num.lose { color: var(--red); }
+  .curve-svg { width: 100%; height: 70px; display: block; }
+
+  .group-title { font-size: 14px; font-weight: 700; margin: 6px 0 10px; padding-left: 4px; border-left: 3px solid var(--brand); }
+  .ticket { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 13px; box-shadow: var(--shadow); margin-bottom: 11px; position: relative; }
+  .ticket-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .ticket-type { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 16px; }
+  .ticket-type.single { background: var(--brand-soft); color: var(--brand); }
+  .ticket-type.combo { background: var(--gold-soft); color: var(--gold); }
+  .ticket-stake { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ticket-legs { margin: 8px 0; }
+  .leg { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 4px 0; }
+  .leg .ln { color: var(--muted); font-size: 11px; width: 52px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .leg .lv { font-weight: 700; }
+  .leg .lo { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 16px; color: #fff; margin-right: 5px; }
+  .badge.pt-had { background: var(--pt-had); } .badge.pt-hhad { background: var(--pt-hhad); } .badge.pt-hf { background: var(--pt-hf); } .badge.pt-score { background: var(--pt-score); }
+  .badge.win { background: var(--green); } .badge.lose { background: var(--red); } .badge.pending { background: var(--muted2); }
+  .ticket-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .profit { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; } .profit.pos { color: var(--green); } .profit.neg { color: var(--red); }
+  .settle-row { display: flex; gap: 6px; margin-top: 8px; }
+  .settle-btn { flex: 1; border: 1px solid var(--line); background: var(--card2); border-radius: 8px; padding: 7px 0; font-size: 13px; cursor: pointer; color: var(--text); }
+  .settle-btn:active { background: var(--brand-soft); }
+  .del { position: absolute; top: 10px; right: 10px; border: none; background: var(--red-soft); color: var(--red); width: 26px; height: 26px; border-radius: 50%; font-size: 14px; cursor: pointer; }
+  .re-settle { font-size: 12px; color: var(--brand); background: none; border: none; padding: 0; cursor: pointer; }
+
+  .empty { text-align: center; color: var(--muted2); padding: 36px 0; font-size: 14px; }
+
+  .paste-area { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .paste-area textarea, .modal textarea, .modal input, .modal select { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; background: var(--bg2); color: var(--text); font-family: inherit; }
+  .import-note { font-size: 12px; color: var(--muted2); margin-top: 8px; line-height: 1.55; }
+
+  .nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(13,17,23,.92); backdrop-filter: blur(10px); border-top: 1px solid var(--line); display: flex; z-index: 20; }
+  .nav button { flex: 1; border: none; background: none; padding: 9px 0 7px; font-size: 11px; color: var(--muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: inherit; }
+  .nav button .ico { font-size: 21px; line-height: 1; filter: grayscale(.3); }
+  .nav button.active { color: var(--brand); font-weight: 600; }
+  .nav button.active .ico { filter: none; }
+
+  .toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); background: rgba(230,237,243,.95); color: #0d1117; padding: 10px 18px; border-radius: 22px; font-size: 13px; font-weight: 600; z-index: 200; opacity: 0; transition: opacity .25s; pointer-events: none; box-shadow: var(--shadow); }
   .toast.show { opacity: 1; }
-  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
-  /* ===== 分析台 ===== */
-  .ana-card { padding: 14px; }
-  .ana-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
-  .ana-no { font-weight: 700; font-size: 13px; color: var(--green-dark); }
-  .ana-league { font-size: 12px; color: var(--muted); }
-  .ana-time { font-size: 12px; color: var(--muted); margin-left: auto; }
-  .ana-level { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; color: #fff; }
-  .ana-level.l1 { background: var(--green); }
-  .ana-level.l2 { background: var(--draw); }
-  .ana-level.l3 { background: var(--red); }
-  .ana-match { font-size: 18px; font-weight: 700; text-align: center; margin: 6px 0 12px; }
-  .ana-match span { color: var(--muted); font-size: 13px; font-weight: 400; margin: 0 6px; }
-  .ana-prob { margin-bottom: 10px; }
-  .prob-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
-  .prob-row .pn { width: 22px; color: var(--muted); }
-  .prob-row .pbar { flex: 1; height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; }
-  .prob-row .pbar i { display: block; height: 100%; border-radius: 6px; }
-  .prob-row .pv { width: 34px; text-align: right; font-weight: 600; }
-  .ana-ev { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; font-size: 11px; color: var(--muted); }
-  .ana-ev b { font-weight: 700; }
-  .ev-pos { color: var(--green); }
-  .ev-neg { color: var(--red); }
-  .ana-rec { background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
-  .ana-rec .rec-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-  .ana-rec ul { margin: 0; padding-left: 16px; font-size: 13px; }
-  .ana-rec li { margin-bottom: 3px; }
-  .ana-rec .rec-main { color: var(--green-dark); font-weight: 700; }
-  .ana-note { font-size: 12px; color: #374151; line-height: 1.5; margin-bottom: 8px; }
-  .ana-warn { font-size: 11px; color: var(--draw); background: #fffbeb; border-radius: 8px; padding: 6px 8px; margin-bottom: 10px; }
-  .ana-add { background: var(--green); color: #fff; border: none; }
-  .ana-add:active { background: var(--green-dark); }
+  .analysis-saved { background: var(--brand-soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+  .analysis-saved .lv { font-weight: 700; color: var(--brand); }
+  .import-box { background: var(--gold-soft); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; margin-bottom: 14px; font-size: 13px; }
+  .import-box h4 { margin: 0 0 6px; font-size: 13px; color: var(--gold); }
+  .import-box .rec { padding: 4px 0; border-bottom: 1px dashed var(--line); }
+  .import-box .rec:last-child { border-bottom: none; }
+  .import-box .risk { color: var(--gold); margin-top: 6px; }
+
+  .modal { position: fixed; inset: 0; background: rgba(1,4,9,.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+  .modal.show { display: flex; }
+  .modal-card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; width: 100%; max-width: 420px; max-height: 88vh; overflow-y: auto; box-shadow: var(--shadow); }
+  .modal-card h2 { margin: 0 0 14px; font-size: 17px; font-weight: 700; }
+  .seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+  .seg button { flex: 1; border: none; background: var(--card2); color: var(--muted); padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .seg button.active { background: var(--brand); color: #fff; }
+  .combo-leg { border: 1px solid var(--line); border-radius: 12px; padding: 10px; margin-bottom: 10px; background: var(--bg2); }
+  .combo-leg-h { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+  .combo-leg-body { display: grid; grid-template-columns: 1.1fr 1fr 0.8fr; gap: 6px; }
+  .combo-leg-body select, .combo-leg-body input { padding: 8px; font-size: 13px; }
+  .chk-row { display: flex; align-items: center; gap: 9px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; cursor: pointer; background: var(--bg2); }
+  .chk-row input { width: 18px; height: 18px; accent-color: var(--brand); }
+  .chk-row .cn { font-size: 13px; }
 </style>
 </head>
 <body>
 <div class="app">
 
-  <!-- 顶部标题 -->
-  <div class="header">
+  <div class="header" id="main-header">
     <h1>⚽ 竞彩 · 分析与记账</h1>
-    <p>看分析 → 记一笔 → 自动算盈亏</p>
+    <p>分析工作表 · 看清风险 · 资金账本</p>
   </div>
 
-  <!-- ===== 分析台（合并入口，默认首屏） ===== -->
-  <section id="view-analysis" class="view active">
-    <div class="card" style="margin-top:14px;">
-      <h2>📡 竞彩分析台</h2>
-      <p class="hint">模型估算，临场请以竞彩官方最新值为准。点卡片下方「记一笔」可把推荐直接带入记账。</p>
+  <section id="view-matches" class="view active">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn-outline" style="flex:1;" onclick="openImport()">📥 批量导入分析</button>
     </div>
-    <div id="analysis-box"></div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div class="match-grid" id="match-grid"></div>
+    <div class="paste-area">
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px;">📋 手动添加比赛</div>
+      <textarea id="paste-input" placeholder="粘贴竞彩格式，如：&#10;周四001 欧罗巴 07-31 01:00 中日德兰 VS 贝西克塔斯 2.30 3.20 3.00&#10;或简单写：曼城 vs 热刺"></textarea>
+      <button class="btn-outline" style="margin-top:8px;" onclick="parseAndAdd()">解析并添加</button>
+    </div>
+    <p class="hint">💡 点击任意比赛卡片 → 进入分析工作表 + 选方案记一笔。</p>
   </section>
 
-  <!-- ===== 首页 ===== -->
-  <section id="view-home" class="view">
-    <div class="stat-grid">
-      <div class="stat"><div class="num" id="home-count">0</div><div class="label">总笔数</div></div>
-      <div class="stat"><div class="num" id="home-profit">¥0</div><div class="label">总盈亏</div></div>
-      <div class="stat"><div class="num" id="home-wait">0</div><div class="label">待结算</div></div>
-    </div>
-
-    <div class="card" style="margin-top:14px;">
-      <h2>最近投注</h2>
-      <div id="home-recent"></div>
-    </div>
-
-    <button class="btn-primary" onclick="goAdd()">+ 新增一笔投注</button>
-    <p class="hint">💾 你填的数据会自动存在本机浏览器——关掉网页再打开也还在。到「列表」里点"实际 胜/平/负"就能结算，中奖和盈亏自动算。</p>
+  <section id="view-detail" class="view">
+    <div id="detail-content"></div>
   </section>
 
-  <!-- ===== 新增投注 ===== -->
-  <section id="view-add" class="view">
-    <div class="card">
-      <h2>新增投注</h2>
-      <div class="field">
-        <label>日期</label>
-        <input type="date" id="f-date" />
-      </div>
-      <div class="field">
-        <label>从网络加载比赛（选了就能自动出结果，可选）</label>
-        <button type="button" class="btn-mini" onclick="loadMatches()">📡 加载这天的比赛</button>
-        <div id="match-list" style="margin-top:10px;"></div>
-      </div>
-      <div class="field">
-        <label>比赛（联网选了会自动填入，也可手动输入）</label>
-        <input type="text" id="f-match" placeholder="联赛 + 主队 vs 客队" />
-      </div>
-      <div class="field">
-        <label>我的选择</label>
-        <div class="pick">
-          <button type="button" data-pick="胜" onclick="pickThis(this)">胜</button>
-          <button type="button" data-pick="平" onclick="pickThis(this)">平</button>
-          <button type="button" data-pick="负" onclick="pickThis(this)">负</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>赔率</label>
-        <input type="number" id="f-odds" step="0.01" min="1" placeholder="如 2.10" />
-      </div>
-      <div class="field">
-        <label>投注金额（元）</label>
-        <input type="number" id="f-amount" step="1" min="1" placeholder="如 100" />
-      </div>
-      <div class="field">
-        <label>备注（可选）</label>
-        <textarea id="f-note" placeholder="例如：来自分析台 周三001 / 感觉稳"></textarea>
-      </div>
-      <button class="btn-primary" onclick="saveBet()">保存</button>
-    </div>
+  <section id="view-bets" class="view">
+    <div id="bet-content"></div>
   </section>
 
-  <!-- ===== 投注列表 ===== -->
-  <section id="view-list" class="view">
-    <div class="card">
-      <h2>投注列表</h2>
-      <button class="btn-mini" onclick="refreshResults(false)" style="margin-bottom:10px;">🔄 自动更新比分（联网）</button>
-      <div id="list-box"></div>
-      <p class="hint">从网络选的比赛，点"自动更新比分"会拉真实比分并结算；手打的比赛点下方"实际 胜/平/负"结算。</p>
-    </div>
-  </section>
-
-  <!-- ===== 统计 ===== -->
-  <section id="view-stat" class="view">
-    <div class="card">
-      <h2>总览</h2>
-      <div class="stat-grid" style="margin-bottom:14px;">
-        <div class="stat"><div class="num" id="stat-count">0</div><div class="label">总笔数</div></div>
-        <div class="stat"><div class="num" id="stat-money">¥0</div><div class="label">总投注</div></div>
-        <div class="stat"><div class="num" id="stat-profit">¥0</div><div class="label">总盈亏</div></div>
-      </div>
-      <p class="hint">"总盈亏"= 已结算笔数里，中奖盈利减去失败亏损的合计（未结算的不计入）。</p>
-    </div>
-
-    <div class="card">
-      <h2>结算情况</h2>
-      <div id="stat-dist"></div>
-    </div>
-  </section>
-
-  <!-- 底部导航 -->
   <nav class="nav">
-    <button class="active" data-view="analysis" onclick="show('analysis', this)"><span class="ico">🔍</span>分析</button>
-    <button data-view="home" onclick="show('home', this)"><span class="ico">🏠</span>首页</button>
-    <button data-view="add" onclick="show('add', this)"><span class="ico">➕</span>新增</button>
-    <button data-view="list" onclick="show('list', this)"><span class="ico">📋</span>列表</button>
-    <button data-view="stat" onclick="show('stat', this)"><span class="ico">📊</span>统计</button>
+    <button class="active" data-view="matches" onclick="switchView('matches',this)"><span class="ico">🏟️</span>赛事</button>
+    <button data-view="bets" onclick="switchView('bets',this)"><span class="ico">📒</span>账本</button>
   </nav>
+
+  <div class="modal" id="import-modal">
+    <div class="modal-card">
+      <h2>📥 批量导入分析</h2>
+      <p class="import-note" style="margin-top:0;"><b>方式一 · 粘贴表格：</b>把分析表格粘进来（用 <b>|</b> 或 <b>Tab</b> 分隔列）。支持表头识别，列建议：<br>场次 | 联赛 | 主队 | 客队 | 胜赔 | 平赔 | 负赔 | Level | 推荐玩法 | 风险提示<br>程序按「场次号」匹配已有比赛，自动填入赔率 / Level / 推荐 / 风险。</p>
+      <textarea id="import-input" style="min-height:120px;" placeholder="周三001|欧冠|凯拉特|奥莫尼亚|2.35|3.20|2.90|2|胜平负-胜|客队轮换主力&#10;周三002|欧冠|帕纳辛奈科斯|萨格勒布迪纳摩|2.10|3.40|3.25|3|让球-1胜|首回合领先优势"></textarea>
+      <button class="btn-primary" style="margin-top:12px;" onclick="doImport()">导入并填数据</button>
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 8px;color:var(--muted);font-size:12px;"><span style="flex:1;height:1px;background:var(--line);"></span>或上传 Word 文档（.docx）<span style="flex:1;height:1px;background:var(--line);"></span></div>
+      <p class="import-note" style="margin-top:0;"><b>方式二 · 上传文档：</b>直接上传我发给你的分析文档（.docx）。程序自动解析「总览表 + 每场详细分析」，按<b>队名</b>匹配填入对应比赛的 Level 与胜平负 / 让球 / 半全场 / 比分推荐，并自动算 BFDS 五维。文档只在你本机解析，<b>不会上传任何服务器</b>。</p>
+      <input type="file" id="docx-input" accept=".docx" style="margin-top:8px;color:var(--text);width:100%;" onchange="importDocx(this.files[0])">
+      <button class="btn-outline" style="margin-top:12px;" onclick="closeImport()">关闭</button>
+      <button style="margin-top:8px;width:100%;border:1px solid var(--red);background:transparent;color:var(--red);border-radius:10px;padding:10px;font-size:13px;cursor:pointer;font-family:inherit;" onclick="clearAllMatches()">🗑 清空全部比赛（含示例）</button>
+    </div>
+  </div>
+
+  <div class="modal" id="ticket-modal">
+    <div class="modal-card">
+      <h2>➕ 新增方案</h2>
+      <div class="seg">
+        <button id="seg-single" class="active" onclick="setTkType('single',this)">单关</button>
+        <button id="seg-combo" onclick="setTkType('combo',this)">串关</button>
+      </div>
+      <div id="single-sec">
+        <div class="field"><label>选择比赛</label><select id="tk-match"></select></div>
+        <div class="play-tabs" id="tk-play-tabs"></div>
+        <div id="tk-options"></div>
+        <div class="field" id="tk-handicap-field" style="display:none;"><label>让球数</label><select id="tk-handicap"><option value="-1">让1球 (-1)</option><option value="-2">让2球 (-2)</option><option value="1">受让1球 (+1)</option><option value="2">受让2球 (+2)</option></select></div>
+        <div class="field"><label>赔率</label><input type="number" id="tk-odds" step="0.01" min="1" placeholder="如 2.10"></div>
+        <div class="field"><label>投入（元）</label><input type="number" id="tk-amount" step="1" min="1" placeholder="如 100"></div>
+        <div class="field"><label>备注（可选）</label><input id="tk-note" placeholder="如 来自分析 Level2"></div>
+      </div>
+      <div id="combo-sec" style="display:none;">
+        <div class="field"><label>勾选串关场次（≥2 场）</label><div id="tk-combo-list"></div></div>
+        <div id="tk-combo-legs"></div>
+        <div class="handicap-row"><label>倍数</label><input id="tk-multiple" type="number" value="1" min="1" style="flex:1;"></div>
+        <div class="field"><label>总投入（元）</label><input type="number" id="tk-amount-combo" step="1" min="1" placeholder="如 100"></div>
+        <div class="field"><label>备注（可选）</label><input id="tk-note-combo" placeholder="如 2串1 稳单"></div>
+      </div>
+      <button class="btn-primary" style="margin-top:12px;" onclick="saveTicket()">保存方案</button>
+      <button class="btn-outline" style="margin-top:8px;" onclick="closeTicket()">关闭</button>
+    </div>
+  </div>
+
+  <div class="modal" id="capital-modal">
+    <div class="modal-card">
+      <h2>💰 设置期初本金</h2>
+      <p class="import-note" style="margin-top:0;">填写你充值/准备投入的总本金，账本会据此算出余额与收益率（ROI）。不改也能用，只显示总盈亏。</p>
+      <div class="field"><label>期初本金（元）</label><input type="number" id="cap-input" step="1" min="0" placeholder="如 10000"></div>
+      <button class="btn-primary" onclick="saveCapital()">保存</button>
+      <button class="btn-outline" style="margin-top:8px;" onclick="closeCapital()">关闭</button>
+    </div>
+  </div>
 
   <div class="toast" id="toast"></div>
 </div>
 
 <script>
-  // ===== 数据存在浏览器本地（localStorage）=====
-  var STORE_KEY = "jingcai_bets_v1";
-  var SEED_FLAG = "jingcai_seeded_v1";
-  var bets = [];
+var KEY_MATCHES = "jc_matches_v2";
+var KEY_TICKETS = "jc_tickets_v3";
+var KEY_CAPITAL = "jc_capital_v1";
 
-  function load() {
-    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
-    catch (e) { return []; }
-  }
-  function save() {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(bets));
-      return true;
-    } catch (e) {
-      // 极少数情况浏览器禁用了本地存储（如隐身模式），给个提示而不是白屏
-      toast("⚠️ 保存失败：浏览器本地存储不可用");
-      return false;
+var matches = [], tickets = [], capital = { principal: 0 };
+var currentMatchId = null;
+
+function loadMatches() { try { return JSON.parse(localStorage.getItem(KEY_MATCHES)) || []; } catch(e) { return []; } }
+function saveMatches() { try { localStorage.setItem(KEY_MATCHES, JSON.stringify(matches)); return true; } catch(e) { toast("保存失败"); return false; } }
+function loadTickets() { try { return JSON.parse(localStorage.getItem(KEY_TICKETS)) || []; } catch(e) { return []; } }
+function saveTickets() { try { localStorage.setItem(KEY_TICKETS, JSON.stringify(tickets)); return true; } catch(e) { toast("保存失败"); return false; } }
+function loadCapital() { try { var c = JSON.parse(localStorage.getItem(KEY_CAPITAL)); return c && typeof c.principal === "number" ? c : { principal: 0 }; } catch(e) { return { principal: 0 }; } }
+function saveCapitalD() { try { localStorage.setItem(KEY_CAPITAL, JSON.stringify(capital)); } catch(e) {} }
+
+function pid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString("zh-CN"); }
+function esc(s) { return String(s==null?"":s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function toast(msg) { var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(function(){ t.classList.remove("show"); }, 1800); }
+function todayStr() { var d = new Date(); return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2); }
+
+var PLAY_TYPES = [
+  { key: "had", label: "胜平负", opts: ["胜","平","负"] },
+  { key: "hhad", label: "让球胜平负", opts: ["让胜","让平","让负"], needHandicap: true },
+  { key: "hf", label: "半全场", opts: ["胜胜","胜平","胜负","平胜","平平","平负","负胜","负平","负负"] },
+  { key: "score", label: "比分", opts: [] }
+];
+var SCORE_OPTS = ["1-0","2-0","2-1","3-0","3-1","3-2","4-0","4-1","4-2","0-0","1-1","2-2","0-1","0-2","1-2","0-3","1-3","2-3"];
+var PLAY_LABEL = { had:"胜平负", hhad:"让球", hf:"半全场", score:"比分" };
+
+var CALIBRATIONS = [
+  "客队首回合领先≥2球+主队首回合xG≥1.4但0进球→主队零进球+20%",
+  "主队控球率≥55%但射正≤2→主队进球-25%",
+  "盘口从主让平半退至客让0.25+上盘水位0.83-0.88→客队不败>75%",
+  "竞彩官方主胜明显低于所有主流机构→该方向诱盘",
+  "首回合0-4级别→次回合主队翻盘<2%，让球负最优",
+  "客队首回合1-0领先的次回合→半场0-0+比分0-2",
+  "主队近2场射正≤2且对手反击射正≥4→控球幻觉成立",
+  "首回合xG≥1.4但0进球+次回合关键进球被VAR吹→全场零进球+20%",
+  "比分预测必须显式输出0-0和3-0/4-0概率",
+  "赛季均值的小球预设在防线崩盘+早段领先情境下必须被推翻",
+  "早段核心伤退+卡位战→0-0概率加权15-20%",
+  "盘口与基本面同向变动时置信度0.8",
+  "赛程完整性核验为模型第0步",
+  "传统足彩与竞彩足球区分",
+  "复盘自评严格按推荐vs实际标记",
+  "让球玩法是欧冠资格赛最优解",
+  "比分玩法仅小注娱乐，Level4+禁用",
+  "2串1仅组合Level1-2场次，Level3最多进1场",
+  "临场盘口变化必须响应",
+  "竞彩单独诱主+反转=庄家引导资金",
+  "人工草皮叙事在控球幻觉成立时无效",
+  "首回合1-0客队领先→平/负半全场标准剧本",
+  "客队近10场8大2小+主队主场→总进球大2.5优先",
+  "所有结论必须标注数据时间戳"
+];
+
+function switchView(name, btn) {
+  document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+  document.getElementById("view-" + name).classList.add("active");
+  document.querySelectorAll(".nav button").forEach(function(b){ b.classList.remove("active"); });
+  if (btn) btn.classList.add("active");
+  if (name === "matches") renderMatches();
+  if (name === "bets") renderBets();
+}
+function openDetail(matchId) {
+  currentMatchId = matchId;
+  document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+  document.getElementById("view-detail").classList.add("active");
+  document.querySelectorAll(".nav button").forEach(function(b){ b.classList.remove("active"); });
+  renderDetail(matchId);
+}
+function goBack() { switchView("matches", document.querySelector('.nav button[data-view="matches"]')); }
+
+var currentFilter = "全部";
+function renderMatches() {
+  var grid = document.getElementById("match-grid"), fbar = document.getElementById("filter-bar");
+  if (!grid) return;
+  var leagues = ["全部"];
+  matches.forEach(function(m){ if (leagues.indexOf(m.league) === -1) leagues.push(m.league); });
+  fbar.innerHTML = leagues.map(function(l){ return '<button class="filter-tag'+(l===currentFilter?' active':'')+'" onclick="setFilter(\''+esc(l)+'\')">'+esc(l)+'</button>'; }).join("");
+  var filtered = currentFilter === "全部" ? matches : matches.filter(function(m){ return m.league === currentFilter; });
+  if (!filtered.length) { grid.innerHTML = '<div class="empty" style="grid-column:span 2;">暂无比赛<br><br>👆 在上方手动添加</div>'; return; }
+  grid.innerHTML = filtered.map(function(m) {
+    var w = m.win > 0 ? m.win.toFixed(2) : "-", d = m.draw > 0 ? m.draw.toFixed(2) : "-", l = m.lose > 0 ? m.lose.toFixed(2) : "-";
+    var lv = m.analysis && m.analysis.level ? m.analysis.level : 0;
+    var lvHtml = lv ? '<span class="mc-level" style="background:'+levelColor(lv)+'">L'+lv+'</span>' : '';
+    return '<div class="match-card" onclick="openDetail(\''+m.id+'\')">' +
+      (m.single ? '<span class="mc-single">单</span>' : '') + lvHtml +
+      '<div class="mc-league"><span class="mc-num">'+esc(m.num||"")+'</span>'+esc(m.league||"未知")+'</div>' +
+      '<div class="mc-time">'+esc(m.time||"")+'</div>' +
+      '<div class="mc-vs">'+esc(m.home||"?")+' <span style="font-weight:400;color:var(--muted);font-size:12px;">VS</span> '+esc(m.away||"?")+'</div>' +
+      '<div class="mc-odds"><div class="ow">胜<br>'+w+'</div><div class="od">平<br>'+d+'</div><div class="ol">负<br>'+l+'</div></div></div>';
+  }).join("");
+}
+function setFilter(l) { currentFilter = l; renderMatches(); }
+
+function parseAndAdd() {
+  var txt = document.getElementById("paste-input").value.trim();
+  if (!txt) { toast("请先粘贴内容"); return; }
+  var added = 0;
+  txt.split("\n").filter(function(l){ return l.trim(); }).forEach(function(line) {
+    line = line.trim();
+    var r1 = line.match(/(周[一二三四五六日]\d{3})\s+(.+?)\s+(\d{2}-\d{2}\s+\d{2}:\d{2})\s+(.+?)\s*VS\s*(.+?)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)/i);
+    if (r1) { matches.push({ id:pid(), num:r1[1], league:r1[2].trim(), time:r1[3], home:r1[4].trim(), away:r1[5].trim(), win:parseFloat(r1[6])||0, draw:parseFloat(r1[7])||0, lose:parseFloat(r1[8])||0, single:false, analysis:null }); added++; return; }
+    var r2 = line.match(/(.+?)\s*[vsVS·]+\s*(.+)/);
+    if (r2) { matches.push({ id:pid(), num:"", league:"手动添加", time:todayStr()+" 待定", home:r2[1].trim(), away:r2[2].trim(), win:0, draw:0, lose:0, single:false, analysis:null }); added++; return; }
+  });
+  if (added > 0) { saveMatches(); renderMatches(); document.getElementById("paste-input").value = ""; toast("已添加 "+added+" 场比赛 ✓"); }
+  else toast("未能识别格式");
+}
+
+function openImport() { document.getElementById("import-modal").classList.add("show"); }
+function closeImport() { document.getElementById("import-modal").classList.remove("show"); }
+function clearAllMatches() {
+  if(!confirm("确定清空全部比赛？此操作不可恢复（已记的账本方案会保留，但不再关联比赛）。")) return;
+  matches = [];
+  saveMatches(); renderMatches();
+  toast("已清空全部比赛");
+}
+function doImport() {
+  var txt = document.getElementById("import-input").value.trim();
+  if (!txt) { toast("请先粘贴表格"); return; }
+  var lines = txt.split("\n").map(function(l){ return l.trim(); }).filter(function(l){ return l; });
+  var matched = 0;
+  lines.forEach(function(line) {
+    var cells = line.split(/\s*\|\s*|\t/).map(function(c){ return c.trim(); });
+    if (cells.length < 2) cells = line.split(/\s{2,}/).map(function(c){ return c.trim(); });
+    if (!cells.length || !cells[0]) return;
+    var isHeader = /场次|联赛|主队|客队|胜赔/.test(line);
+    var col = {};
+    if (isHeader) {
+      cells.forEach(function(c, i){ if (/场次/.test(c)) col.num=i; else if (/联赛/.test(c)) col.league=i; else if (/主队/.test(c)) col.home=i; else if (/客队/.test(c)) col.away=i; else if (/胜赔|胜$/.test(c) && !/平|负/.test(c)) col.win=i; else if (/平赔|平/.test(c)) col.draw=i; else if (/负赔|负/.test(c)) col.lose=i; else if (/level/i.test(c)) col.level=i; else if (/推荐/.test(c)) col.rec=i; else if (/风险/.test(c)) col.risk=i; });
+    } else {
+      col = { num:0, league:1, home:2, away:3, win:4, draw:5, lose:6, level:7, rec:8, risk:9 };
     }
-  }
+    var num = cells[col.num] || "", home = cells[col.home] || "", away = cells[col.away] || "";
+    var m = matches.find(function(x){ return x.num && x.num === num; }) ||
+            matches.find(function(x){ return home && away && x.home && x.away && (x.home.indexOf(home)>=0 || home.indexOf(x.home)>=0) && (x.away.indexOf(away)>=0 || away.indexOf(x.away)>=0); });
+    if (!m) return;
+    var win = parseFloat(cells[col.win]), draw = parseFloat(cells[col.draw]), lose = parseFloat(cells[col.lose]);
+    if (!(m.win>0) && win>0) m.win = win;
+    if (!(m.draw>0) && draw>0) m.draw = draw;
+    if (!(m.lose>0) && lose>0) m.lose = lose;
+    var lv = parseInt(cells[col.level], 10);
+    var a = m.analysis || {};
+    if (!isNaN(lv) && lv>=1 && lv<=5) { a.level = lv; a.position = levelCmd(lv); }
+    if (cells[col.rec]) a.importRec = cells[col.rec];
+    if (cells[col.risk]) a.importRisk = cells[col.risk];
+    m.analysis = a;
+    matched++;
+  });
+  if (matched > 0) { saveMatches(); renderMatches(); document.getElementById("import-input").value=""; closeImport(); toast("已导入 "+matched+" 场分析 ✓"); }
+  else toast("没匹配到任何比赛（按场次号匹配）");
+}
 
-  // 第一次打开时，放几条示例数据，方便你看效果（可随时删除）
-  function seedIfNeeded() {
-    if (!localStorage.getItem(SEED_FLAG)) {
-      var today = new Date();
-      function d(n) {
-        var x = new Date(today.getTime() - n * 86400000);
-        return x.toISOString().slice(0, 10);
+// ============================================================
+//  Word 文档（.docx）导入 —— 纯浏览器解析，不上传
+// ============================================================
+function cleanLine(s){ return (s||'').replace(/\s+/g,' ').trim(); }
+function stripParen(s){ return (s||'').replace(/[（(][^）)]*[）)]/g,'').replace(/\s+/g,' ').trim(); }
+function normName(s){ return (s||'').toLowerCase().replace(/[()（）\s]/g,''); }
+function nameMatch(a,b){ var na=normName(a),nb=normName(b); if(!na||!nb) return false; return na===nb||na.indexOf(nb)>=0||nb.indexOf(na)>=0; }
+function parseLevelRaw(s){ var m=(s||'').match(/L?\s*(\d+)/i); if(m){ var v=+m[1]; if(v>=1&&v<=5) return v; } return 0; }
+function detectLeague(txt){
+  var map=[['欧冠资格赛','欧冠资格赛'],['欧冠','欧冠'],['英超','英超'],['西甲','西甲'],['德甲','德甲'],['意甲','意甲'],['法甲','法甲'],['欧联','欧联杯'],['欧协联','欧协联'],['巴甲','巴甲'],['中超','中超'],['世界杯','世界杯'],['欧洲杯','欧洲杯']];
+  for(var i=0;i<map.length;i++){ if(txt.indexOf(map[i][0])>=0) return map[i][1]; }
+  return '导入赛事';
+}
+
+// —— 解压 docx（ZIP + DEFLATE-raw）——
+async function unzipDocx(buf){
+  var view = new DataView(buf);
+  var eocd = -1;
+  for(var i = buf.byteLength - 22; i >= 0; i--){
+    if(view.getUint32(i, true) === 0x06054b50){ eocd = i; break; }
+  }
+  if(eocd < 0) throw new Error('不是有效的 .docx 文件');
+  var total = view.getUint16(eocd + 10, true);
+  var cdOff = view.getUint32(eocd + 16, true);
+  var files = {};
+  var p = cdOff;
+  for(var k = 0; k < total; k++){
+    if(view.getUint32(p, true) !== 0x02014b50) break;
+    var method = view.getUint16(p + 10, true);
+    var compSize = view.getUint32(p + 20, true);
+    var fnLen = view.getUint16(p + 28, true);
+    var exLen = view.getUint16(p + 30, true);
+    var cmLen = view.getUint16(p + 32, true);
+    var localOff = view.getUint32(p + 42, true);
+    var name = '';
+    for(var j = 0; j < fnLen; j++) name += String.fromCharCode(buf[p + 46 + j]);
+    files[name] = { method: method, compSize: compSize, localOff: localOff };
+    p += 46 + fnLen + exLen + cmLen;
+  }
+  var entry = files['word/document.xml'];
+  if(!entry) throw new Error('找不到 document.xml');
+  var lh = entry.localOff;
+  var lfnLen = view.getUint16(lh + 26, true);
+  var lexLen = view.getUint16(lh + 28, true);
+  var dataStart = lh + 30 + lfnLen + lexLen;
+  var comp = new Uint8Array(buf, dataStart, entry.compSize);
+  var xmlBytes;
+  if(entry.method === 0){ xmlBytes = comp.slice(); }
+  else if(entry.method === 8){
+    if(typeof DecompressionStream === 'undefined') throw new Error('当前浏览器不支持解压，请用最新版 Chrome / Edge');
+    var ds = new DecompressionStream('deflate-raw');
+    var writer = ds.writable.getWriter();
+    writer.write(comp); writer.close();
+    var ab = await new Response(ds.readable).arrayBuffer();
+    xmlBytes = new Uint8Array(ab);
+  } else { throw new Error('不支持的压缩方式: ' + entry.method); }
+  return new TextDecoder('utf-8').decode(xmlBytes);
+}
+function parseDocxTables(xml){
+  var doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if(doc.getElementsByTagName('parsererror').length) throw new Error('文档解析失败');
+  var ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  var tbls = doc.getElementsByTagNameNS(ns, 'tbl');
+  var out = [];
+  for(var i = 0; i < tbls.length; i++){
+    var rows = tbls[i].getElementsByTagNameNS(ns, 'tr');
+    var t = [];
+    for(var r = 0; r < rows.length; r++){
+      var cells = rows[r].getElementsByTagNameNS(ns, 'tc');
+      var line = [];
+      for(var c = 0; c < cells.length; c++){
+        var ts = cells[c].getElementsByTagNameNS(ns, 't');
+        var s = '';
+        for(var x = 0; x < ts.length; x++) s += ts[x].textContent;
+        line.push(s);
       }
-      bets = [
-        { id: 1, date: d(3), match: "英超 曼城 vs 热刺", pick: "胜", odds: 1.85, amount: 100, note: "主场强势", result: "胜" },
-        { id: 2, date: d(2), match: "西甲 皇马 vs 巴萨", pick: "平", odds: 3.40, amount: 50, note: "国家德比", result: "负" },
-        { id: 3, date: d(1), match: "意甲 国际米兰 vs 尤文", pick: "负", odds: 2.10, amount: 100, note: "", result: "负" }
-      ];
-      save();
-      localStorage.setItem(SEED_FLAG, "1");
+      t.push(line);
     }
+    out.push(t);
   }
-
-  // ===== 分析台数据（复刻自竞彩分析台，结构化以便「记一笔」对接）=====
-  // prob = [胜, 平, 客] 概率；ev = {win, draw, lose} 对应 胜/平/负 EV
-  // pick = 胜平负首选（带入记账用）；pickOdds = 推荐项赔率（无则不填）
-  var ANALYSIS = [
-    {
-      no: "周三001", league: "欧冠资格赛", time: "今晚 23:00",
-      home: "凯拉特", away: "奥莫尼亚",
-      level: "Level 3 险", tag: "诱盘（诱主）",
-      prob: [38, 34, 28], l1: "主 / 平 / 客",
-      ev: { win: -25.5, draw: 8.8, lose: -0.6 },
-      pick: "平", pickOdds: null,
-      picks: ["胜平负 → 平（首选）", "让球(-1) → 负", "比分 1-1 / 0-1 / 防 1-0", "总进球 小2.5（2球以下）"],
-      note: "首回合客场0-1负；主力射手伤缺。奥莫尼亚握1球优势可摆大巴，历史交锋3场共1球。竞彩主胜为全市场最低，去水后仍偏高约7pp，校准4诱主成立。",
-      warning: "小联赛×2 + 人工草 + 高原 + 深夜场 · 部分赔率为预估，临场请改为竞彩最新值"
-    },
-    {
-      no: "周三002", league: "欧冠资格赛", time: "今晚（次回合）",
-      home: "波兹南莱赫", away: "奥胡斯",
-      level: "Level 1 稳", tag: "真强势",
-      prob: [62, 23, 15], l1: "主 / 平 / 客",
-      ev: { win: -22.5, draw: 26.5, lose: 35.0 },
-      pick: "胜", pickOdds: null,
-      picks: ["胜平负 → 主胜（核心胆）", "比分 2-0 / 2-1 / 防 3-1", "总进球 2-3 球", "半全场 胜胜"],
-      note: "首回合客场4-1净胜3球，翻盘概率<2%（校准5）。奥胡斯门将停赛+中轴伤停，近19个欧战客场仅1胜。盘口与基本面同向（校准12）。",
-      warning: "唯一变量：波兹南轮换控场 · 部分赔率为预估，临场请改为竞彩最新值"
-    },
-    {
-      no: "周三003", league: "巴甲·保级战", time: "明晨 06:30",
-      home: "米拉索", away: "雷莫",
-      level: "Level 3 险", tag: "偏诱主",
-      prob: [40, 31, 29], l1: "主 / 平 / 客",
-      ev: { win: -40.0, draw: 17.8, lose: 45.0 },
-      pick: "平", pickOdds: 3.80,
-      picks: ["胜平负 → 平 3.80（今日最佳EV单项）", "比分 1-1 / 2-1 / 防 1-2", "总进球 2-3 球", "半全场 平平"],
-      note: "米拉索三门出战+前锋伤缺；雷莫队长解禁、门神状态火热但客防差。主胜1.50显著低于主流1.66-1.73，去水后仍偏低≥6pp，校准4诱主。",
-      warning: "保级压力 + 门将危机"
-    },
-    {
-      no: "周三004", league: "巴甲", time: "明晨 06:30",
-      home: "巴西国际", away: "弗拉门戈",
-      level: "Level 1 稳", tag: "真强势（客）",
-      prob: [17, 26, 57], l1: "主 / 平 / 客",
-      ev: { win: -18.4, draw: -11.6, lose: -7.1 },
-      pick: "负", pickOdds: null,
-      picks: ["胜平负 → 客胜（串关腿）", "让球(+1) 负 3.10 小仓搏净胜2球", "比分 0-2 / 1-2 / 防 1-1", "半全场 负负"],
-      note: "国际4连败、主场巴甲倒数第二；弗拉门戈攻防两端联赛最强，对国际8场不败。亚盘客让平半升半球水位健康，与基本面同向。",
-      warning: "客胜赔率偏薄，宜作串关腿而非重注单关 · 部分赔率为预估，临场请改为竞彩最新值"
-    },
-    {
-      no: "周三005", league: "巴甲·卡位战", time: "明晨 08:30",
-      home: "弗鲁米嫩塞", away: "巴伊亚",
-      level: "Level 2 中", tag: "暂真强势·降半档",
-      prob: [46, 31, 23], l1: "主 / 平 / 客",
-      ev: { win: -5.7, draw: -3.9, lose: -21.8 },
-      pick: "胜", pickOdds: null,
-      picks: ["胜平负 → 主胜，平局防守", "比分 1-0 / 2-0 / 防 1-1", "总进球 小（2球左右）", "半全场 平胜 / 胜胜"],
-      note: "弗鲁近3轮不胜、射手停赛但蒂亚戈·席尔瓦回归；巴伊亚两主力后卫停赛防线重组、近4客场不胜。亚盘数据缺失，临场务必核盘。",
-      warning: "盘口缺失场次不上重仓 · 部分赔率为预估，临场请改为竞彩最新值"
-    },
-    {
-      no: "周三006", league: "巴甲", time: "明晨 08:30",
-      home: "维多利亚", away: "帕尔梅拉斯",
-      level: "Level 3 险", tag: "信息冲突·无法定性",
-      prob: [22, 31, 47], l1: "主 / 平 / 客",
-      ev: { win: -3.2, draw: 8.5, lose: -19.2 },
-      pick: "负", pickOdds: null,
-      picks: ["胜平负 → 客胜为主、平局必防", "稳妥打法：让球(+1)主不败对冲或直接跳过", "比分 0-1 / 1-2 / 防 1-1", "半全场 平负 / 负负"],
-      note: "帕尔梅拉斯榜首+对维多利亚近5战全胜，但多线作战有轮换。维多利亚主场数据两个情报源冲突，需临场核实。榜首客战主场龙是巴甲经典冷门温床。",
-      warning: "情报冲突 + 轮换风险 → 小仓或跳过 · 部分赔率为预估，临场请改为竞彩最新值"
-    }
-  ];
-
-  // ===== 页面切换 =====
-  function show(name, btn) {
-    var views = document.querySelectorAll(".view");
-    for (var i = 0; i < views.length; i++) views[i].classList.remove("active");
-    document.getElementById("view-" + name).classList.add("active");
-    var navs = document.querySelectorAll(".nav button");
-    for (var j = 0; j < navs.length; j++) navs[j].classList.remove("active");
-    if (btn) btn.classList.add("active");
-    if (name === "home") renderHome();
-    if (name === "list") renderList();
-    if (name === "stat") renderStat();
-    if (name === "analysis") renderAnalysis();
+  return out;
+}
+function docxAllText(xml){
+  var doc = new DOMParser().parseFromString(xml, 'application/xml');
+  var ns = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  var ps = doc.getElementsByTagNameNS(ns, 'p');
+  var arr = [];
+  for(var i = 0; i < ps.length; i++){
+    var ts = ps[i].getElementsByTagNameNS(ns, 't');
+    var s = '';
+    for(var x = 0; x < ts.length; x++) s += ts[x].textContent;
+    arr.push(s);
   }
-  function goAdd() {
-    var btn = document.querySelector('.nav button[data-view="add"]');
-    show("add", btn);
+  return arr.join('\n');
+}
+function findSummaryTable(tables){
+  for(var i = 0; i < tables.length; i++){
+    if(tables[i].length && (tables[i][0].join(' ').indexOf('场次') >= 0) && (tables[i][0].join(' ').indexOf('对阵') >= 0)) return tables[i];
   }
-
-  // ===== 分析台渲染 =====
-  function renderAnalysis() {
-    var box = document.getElementById("analysis-box");
-    if (!box) return;
-    var probNames = ["胜", "平", "客"];
-    var probColors = ["var(--green)", "var(--draw)", "var(--lose)"];
-    box.innerHTML = ANALYSIS.map(function (a, i) {
-      var lvlClass = a.level.indexOf("Level 1") >= 0 ? "l1" : (a.level.indexOf("Level 2") >= 0 ? "l2" : "l3");
-      var probHtml = a.prob.map(function (p, k) {
-        return '<div class="prob-row"><span class="pn">' + probNames[k] + '</span>' +
-          '<div class="pbar"><i style="width:' + p + '%;background:' + probColors[k] + '"></i></div>' +
-          '<span class="pv">' + p + '%</span></div>';
-      }).join("");
-      function evTag(v) { return (v >= 0 ? "+" : "") + v + "%"; }
-      var evHtml = '<div class="ana-ev">' +
-        '<span>主胜 <b class="' + (a.ev.win >= 0 ? "ev-pos" : "ev-neg") + '">EV ' + evTag(a.ev.win) + '</b></span>' +
-        '<span>平 <b class="' + (a.ev.draw >= 0 ? "ev-pos" : "ev-neg") + '">EV ' + evTag(a.ev.draw) + '</b></span>' +
-        '<span>客胜 <b class="' + (a.ev.lose >= 0 ? "ev-pos" : "ev-neg") + '">EV ' + evTag(a.ev.lose) + '</b></span>' +
-        '</div>';
-      var recHtml = '<div class="ana-rec"><div class="rec-title">L1 独立预判：' + esc(a.l1) + '</div><ul>' +
-        a.picks.map(function (t) {
-          var cls = (t.indexOf("首选") >= 0 || t.indexOf("核心胆") >= 0) ? ' class="rec-main"' : '';
-          return '<li' + cls + '>' + esc(t) + '</li>';
-        }).join("") + '</ul></div>';
-      return '<div class="card ana-card">' +
-        '<div class="ana-top"><span class="ana-no">' + a.no + '</span>' +
-        '<span class="ana-league">' + esc(a.league) + '</span>' +
-        '<span class="ana-time">' + esc(a.time) + '</span>' +
-        '<span class="ana-level ' + lvlClass + '">' + esc(a.level + (a.tag ? " · " + a.tag : "")) + '</span></div>' +
-        '<div class="ana-match">' + esc(a.home) + '<span>VS</span>' + esc(a.away) + '</div>' +
-        probHtml + evHtml + recHtml +
-        '<div class="ana-note">' + esc(a.note) + '</div>' +
-        '<div class="ana-warn">⚠ ' + esc(a.warning) + '</div>' +
-        '<button type="button" class="btn-mini ana-add" onclick="prefillFromAnalysis(' + i + ')">📝 记一笔（带入推荐）</button>' +
-        '</div>';
-    }).join("");
+  for(var i = 0; i < tables.length; i++){
+    if(tables[i].length && tables[i][0].join(' ').indexOf('场次') >= 0) return tables[i];
   }
-
-  // ===== 记一笔：把分析推荐带入记账表单 =====
-  function prefillFromAnalysis(i) {
-    var a = ANALYSIS[i];
-    document.getElementById("f-match").value = a.league + " " + a.home + " vs " + a.away;
-    document.getElementById("f-odds").value = a.pickOdds ? a.pickOdds : "";
-    document.getElementById("f-note").value = a.no + " 分析推荐：" + a.pick + (a.pickOdds ? " @" + a.pickOdds : "");
-    // 选中胜平负
-    selectedPick = a.pick;
-    var btns = document.querySelectorAll(".pick button");
-    for (var k = 0; k < btns.length; k++) {
-      if (btns[k].getAttribute("data-pick") === a.pick) btns[k].classList.add("active");
-      else btns[k].classList.remove("active");
-    }
-    // 清空联网选择的比赛引用，避免写入错误 matchId
-    selectedMatch = null;
-    var ml = document.getElementById("match-list"); if (ml) ml.innerHTML = "";
-    // 切到新增视图
-    show("add", document.querySelector('.nav button[data-view="add"]'));
-    toast(a.pickOdds
-      ? ("已带入「" + a.no + "」· 赔率已填，补全金额即可保存")
-      : ("已带入「" + a.no + "」· 请补全赔率和金额"));
+  return null;
+}
+function parseDocxDetail(allText){
+  var blocks = allText.split(/【(\d+)】/);
+  var map = {};
+  for(var i = 1; i < blocks.length; i += 2){
+    var n = blocks[i];
+    var content = blocks[i + 1] || '';
+    var m = {}; var r;
+    var head = content.split('\n')[0] || '';
+    r = head.match(/([^\n]+?)\s+vs\s+([^\n]+)/);
+    if(r){ m.homeRaw = r[1].trim(); m.awayRaw = r[2].trim(); }
+    r = content.match(/[（(](\d{2}-\d{2}[^）)\n]*?)[）)]/); if(r) m.time = r[1].trim();
+    r = content.match(/主胜\s*(\d+)%[\s\S]*?平\s*(\d+)%[\s\S]*?客胜\s*(\d+)%/); if(r){ m.probH = +r[1]; m.probD = +r[2]; m.probA = +r[3]; }
+    r = content.match(/①基准偏离[:：]\s*(\d+)/); if(r) m.d1 = +r[1];
+    r = content.match(/②盘口形态[:：]\s*(\d+)/); if(r) m.d2 = +r[1];
+    r = content.match(/③凯利离散[:：]\s*(\d+)/); if(r) m.d3 = +r[1];
+    r = content.match(/④资金结构[:：]\s*(\d+)/); if(r) m.d4 = +r[1];
+    r = content.match(/⑤风险标签[:：]\s*(\d+)/); if(r) m.d5 = +r[1];
+    r = content.match(/取\s*L(\d+)/) || content.match(/Level\s*(\d+)/); if(r) m.level = +r[1];
+    r = content.match(/胜平负[:：]\s*([^\n（(]+)/); if(r) m.recHAD = cleanLine(r[1]);
+    r = content.match(/让球[:：]\s*([^\n（(]+)/); if(r) m.recHHAD = cleanLine(r[1]);
+    r = content.match(/半全场[:：]\s*([^\n（(]+)/); if(r) m.recHF = cleanLine(r[1]);
+    r = content.match(/(?:^|\n)\s*比分[\s\S]{0,40}?[:：]\s*([^\n（(]+)/); if(r) m.recCRS = cleanLine(r[1]);
+    r = content.match(/仓位[:：]\s*([^\n（(]+)/); if(r) m.stake = cleanLine(r[1]);
+    map[n] = m;
   }
-
-  // ===== 胜平负选择 =====
-  var selectedPick = "";
-  function pickThis(el) {
-    var btns = el.parentNode.querySelectorAll("button");
-    for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
-    el.classList.add("active");
-    selectedPick = el.getAttribute("data-pick");
-  }
-
-  // ===== 保存一笔 =====
-  function saveBet() {
-    var date = document.getElementById("f-date").value;
-    var match = document.getElementById("f-match").value.trim();
-    var odds = parseFloat(document.getElementById("f-odds").value);
-    var amount = parseFloat(document.getElementById("f-amount").value);
-    var note = document.getElementById("f-note").value.trim();
-
-    if (!match) { toast("请填写比赛"); return; }
-    if (!selectedPick) { toast("请选择 胜/平/负"); return; }
-    if (!(odds >= 1)) { toast("赔率要大于等于 1"); return; }
-    if (!(amount > 0)) { toast("金额要大于 0"); return; }
-
-    var id = Date.now();
-    bets.unshift({
-      id: id, date: date, match: match, pick: selectedPick, odds: odds, amount: amount, note: note,
-      matchId: selectedMatch ? selectedMatch.id : "",
-      home: selectedMatch ? selectedMatch.home : "",
-      away: selectedMatch ? selectedMatch.away : "",
-      league: selectedMatch ? selectedMatch.league : ""
-    });
-    save();
-
-    // 清空表单
-    document.getElementById("f-match").value = "";
-    document.getElementById("f-odds").value = "";
-    document.getElementById("f-amount").value = "";
-    document.getElementById("f-note").value = "";
-    selectedPick = "";
-    selectedMatch = null;
-    var ml = document.getElementById("match-list"); if (ml) ml.innerHTML = "";
-    var btns = document.querySelectorAll(".pick button");
-    for (var i = 0; i < btns.length; i++) btns[i].classList.remove("active");
-
-    toast("已保存 ✓");
-    var listBtn = document.querySelector('.nav button[data-view="list"]');
-    show("list", listBtn);
-  }
-
-  // ===== 删除 =====
-  function delBet(id) {
-    if (!confirm("确定删除这笔记录？")) return;
-    bets = bets.filter(function (b) { return b.id !== id; });
-    save();
-    renderList();
-    toast("已删除");
-  }
-
-  // ===== 比赛结算 =====
-  function computeProfit(b) {
-    if (!b.result) return 0;
-    if (b.pick === b.result) return b.amount * b.odds - b.amount; // 中奖净盈利
-    return -b.amount; // 失败亏掉本金
-  }
-  function settle(id, result) {
-    var b = null;
-    for (var i = 0; i < bets.length; i++) { if (bets[i].id === id) { b = bets[i]; break; } }
-    if (!b) return;
-    b.result = result;
-    save(); renderList(); renderStat(); renderHome();
-    toast(b.pick === result ? "🎉 中奖！" : "💥 未中奖");
-  }
-  function unsettle(id) {
-    var b = null;
-    for (var i = 0; i < bets.length; i++) { if (bets[i].id === id) { b = bets[i]; break; } }
-    if (!b) return;
-    b.result = "";
-    save(); renderList(); renderStat(); renderHome();
-  }
-
-  // ===== 从网络自动获取比赛结果（方案1）=====
-  var selectedMatch = null;
-
-  function loadMatches() {
-    var d = document.getElementById("f-date").value;
-    if (!d) { toast("请先选日期"); return; }
-    var box = document.getElementById("match-list");
-    box.innerHTML = '<div class="hint">加载中…</div>';
-    fetch("https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=" + d)
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var evs = (data.events || []).filter(function (e) { return e.strSport === "Soccer"; });
-        if (!evs.length) { box.innerHTML = '<div class="hint">这天没找到足球比赛，可手动输入。</div>'; return; }
-        window._evs = evs;
-        box.innerHTML = evs.map(function (e) {
-          return '<div class="match-opt" data-id="' + e.idEvent + '" onclick="pickMatch(\'' + e.idEvent + '\')">' +
-            '<div style="font-size:14px;font-weight:600;">' + esc(e.strHomeTeam) + ' vs ' + esc(e.strAwayTeam) + '</div>' +
-            '<div class="lg">' + esc(e.strLeague || "") + (e.strCountry ? ' · ' + esc(e.strCountry) : '') + '</div>' +
-          '</div>';
-        }).join("");
-      })
-      .catch(function () {
-        box.innerHTML = '<div class="hint">⚠️ 加载失败（可能没联网或被拦截），可手动输入比赛。</div>';
+  return map;
+}
+function buildDocxAnalysis(det, extra){
+  return {
+    l1: { firstleg: extra.firstLeg || '', form: '', inj: '', val: '', prob: (det.probH != null ? (det.probH + ', ' + det.probD + ', ' + det.probA) : '') },
+    l2: {},
+    bfds: { d1: det.d1 || 0, d2: det.d2 || 0, d3: det.d3 || 0, d4: det.d4 || 0, d5: det.d5 || 0 },
+    level: det.level || 0,
+    position: det.level ? levelCmd(det.level) : '',
+    importRec: extra.importRec || '',
+    importRisk: extra.importRisk || '',
+    calibrations: []
+  };
+}
+async function importDocx(file){
+  if(!file) return;
+  if(!/\.docx$/i.test(file.name)){ toast('请选择 .docx 文件'); return; }
+  try {
+    toast('正在解析文档…');
+    var buf = await file.arrayBuffer();
+    var xml = await unzipDocx(buf);
+    var tables = parseDocxTables(xml);
+    var allText = docxAllText(xml);
+    var detailMap = parseDocxDetail(allText);
+    var sum = findSummaryTable(tables);
+    var parsed = [];
+    if(sum){
+      for(var i = 1; i < sum.length; i++){
+        var row = sum[i];
+        if(!row || row.length < 2) continue;
+        var n = (row[0] || '').trim();
+        var vs = (row[1] || '').split(/vs/i);
+        if(vs.length < 2) continue;
+        var home = stripParen(vs[0]).trim();
+        var away = stripParen(vs[1]).trim();
+        var firstLeg = (row[2] || '').trim();
+        var direction = (row[5] || '').trim();
+        var det = detailMap[n] || {};
+        var lv = det.level || parseLevelRaw((row[4] || '').trim());
+        var recParts = [];
+        if(direction) recParts.push('方向: ' + direction);
+        if(det.recHAD) recParts.push('胜平负: ' + det.recHAD);
+        if(det.recHHAD) recParts.push('让球: ' + det.recHHAD);
+        if(det.recHF) recParts.push('半全场: ' + det.recHF);
+        if(det.recCRS) recParts.push('比分: ' + det.recCRS);
+        var importRec = recParts.join(' ｜ ');
+        var importRisk = (firstLeg ? ('首回合: ' + firstLeg) : '') + (det.stake ? (' ｜ 仓位: ' + det.stake) : '');
+        parsed.push({ n: n, home: home, away: away, league: detectLeague(allText), time: det.time || '', level: lv, analysis: buildDocxAnalysis(det, { firstLeg: firstLeg, importRec: importRec, importRisk: importRisk }) });
+      }
+    } else {
+      Object.keys(detailMap).forEach(function(n){
+        var det = detailMap[n];
+        var home = det.homeRaw ? stripParen(det.homeRaw).trim() : '';
+        var away = det.awayRaw ? stripParen(det.awayRaw).trim() : '';
+        if(!home || !away) return;
+        var recParts = [];
+        if(det.recHAD) recParts.push('胜平负: ' + det.recHAD);
+        if(det.recHHAD) recParts.push('让球: ' + det.recHHAD);
+        if(det.recHF) recParts.push('半全场: ' + det.recHF);
+        if(det.recCRS) recParts.push('比分: ' + det.recCRS);
+        parsed.push({ n: n, home: home, away: away, league: detectLeague(allText), time: det.time || '', level: det.level || 0, analysis: buildDocxAnalysis(det, { importRec: recParts.join(' ｜ '), importRisk: det.stake ? ('仓位: ' + det.stake) : '' }) });
       });
-  }
-
-  function pickMatch(id) {
-    var evs = window._evs || [];
-    var e = null;
-    for (var i = 0; i < evs.length; i++) { if (String(evs[i].idEvent) === String(id)) { e = evs[i]; break; } }
-    if (!e) return;
-    selectedMatch = { id: String(e.idEvent), home: e.strHomeTeam, away: e.strAwayTeam, league: e.strLeague };
-    document.getElementById("f-match").value = e.strHomeTeam + " vs " + e.strAwayTeam;
-    var opts = document.querySelectorAll(".match-opt");
-    for (var j = 0; j < opts.length; j++) opts[j].classList.remove("active");
-    var el = document.querySelector('.match-opt[data-id="' + id + '"]');
-    if (el) el.classList.add("active");
-    toast("已选：" + e.strHomeTeam + " vs " + e.strAwayTeam);
-  }
-
-  function outcomeFromScore(h, a) {
-    h = Number(h); a = Number(a);
-    if (h > a) return "胜";
-    if (h < a) return "负";
-    return "平";
-  }
-
-  function refreshResults(silent) {
-    var pending = bets.filter(function (b) { return b.matchId && !b.result; });
-    if (!pending.length) { if (!silent) toast("没有待自动更新的比赛"); return; }
-    var dates = {};
-    pending.forEach(function (b) { dates[b.date] = true; });
-    var dateList = Object.keys(dates);
-    var done = 0;
-    dateList.forEach(function (d) {
-      fetch("https://www.thesportsdb.com/api/v1/json/3/eventsday.php?d=" + d)
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var evs = (data.events || []).filter(function (e) { return e.strSport === "Soccer"; });
-          var byId = {};
-          evs.forEach(function (e) { byId[e.idEvent] = e; });
-          pending.forEach(function (b) {
-            var e = byId[b.matchId];
-            if (e && e.intHomeScore != null && e.intAwayScore != null) {
-              b.result = outcomeFromScore(e.intHomeScore, e.intAwayScore);
-            }
-          });
-          done++;
-          if (done === dateList.length) finishRefresh(silent, pending);
-        })
-        .catch(function () {
-          done++;
-          if (done === dateList.length) { save(); renderList(); renderStat(); renderHome(); if (!silent) toast("部分更新失败（网络）"); }
-        });
-    });
-  }
-  function finishRefresh(silent, pending) {
-    save(); renderList(); renderStat(); renderHome();
-    if (!silent) toast("已自动更新 " + pending.length + " 场比分 ✓");
-  }
-
-  // ===== 渲染：首页 =====
-  function renderHome() {
-    var settled = bets.filter(function (b) { return b.result; });
-    var totalStake = bets.reduce(function (s, b) { return s + (b.amount || 0); }, 0);
-    var realProfit = settled.reduce(function (s, b) { return s + computeProfit(b); }, 0);
-    document.getElementById("home-count").textContent = bets.length;
-    document.getElementById("home-profit").textContent = (realProfit >= 0 ? "+" : "−") + "¥" + fmt(Math.abs(realProfit));
-    document.getElementById("home-wait").textContent = bets.length - settled.length;
-    var box = document.getElementById("home-recent");
-    if (bets.length === 0) { box.innerHTML = '<div class="empty">还没有记录，点下面按钮加一笔吧</div>'; return; }
-    box.innerHTML = bets.slice(0, 3).map(function (b) {
-      var out = "";
-      if (b.result) {
-        var win = b.pick === b.result;
-        out = ' · <span style="color:' + (win ? "var(--green)" : "var(--red)") + ';">' + (win ? "中奖" : "失败") + '</span>';
-      }
-      return '<div style="padding:8px 0;border-bottom:1px solid var(--line);">' +
-        '<div style="font-size:14px;font-weight:600;">' + esc(b.match) + '</div>' +
-        '<div style="font-size:12px;color:var(--muted);">选' + b.pick + ' · 赔率' + b.odds + ' · ¥' + fmt(b.amount) + out + '</div>' +
-        '</div>';
-    }).join("");
-  }
-
-  // ===== 渲染：列表 =====
-  function renderList() {
-    var box = document.getElementById("list-box");
-    if (bets.length === 0) { box.innerHTML = '<div class="empty">还没有记录</div>'; return; }
-    box.innerHTML = bets.map(function (b) {
-      var cls = b.pick === "胜" ? "sheng" : (b.pick === "平" ? "ping" : "fu");
-      var head = '<div class="bet-match">' + esc(b.match) + '</div>' +
-        '<div class="bet-sub"><span class="badge ' + cls + '">选' + b.pick + '</span>' +
-        b.date + ' · 赔率 ' + b.odds + ' · ¥' + fmt(b.amount) + (b.note ? ' · ' + esc(b.note) : '') + '</div>';
-      var foot;
-      if (b.result) {
-        var win = b.pick === b.result;
-        var p = computeProfit(b);
-        var pTxt = (p >= 0 ? "+" : "−") + "¥" + fmt(Math.abs(p));
-        foot = '<div class="outcome ' + (win ? "win" : "lose") + '">' + (win ? "中奖" : "失败") + '</div>' +
-          '<span style="font-size:12px;color:var(--muted);">实际赛果 ' + b.result + '</span>' +
-          '<button class="re-settle" onclick="unsettle(' + b.id + ')">修改</button>' +
-          '<div class="profit ' + (p >= 0 ? "pos" : "neg") + '">盈亏 ' + pTxt + '</div>';
+    }
+    if(parsed.length === 0){ toast('没解析到任何比赛（检查文档格式）'); return; }
+    var created = 0, updated = 0;
+    parsed.forEach(function(pm){
+      var ex = matches.find(function(mt){
+        return pm.home && pm.away && ((nameMatch(mt.home, pm.home) && nameMatch(mt.away, pm.away)) || (nameMatch(mt.home, pm.away) && nameMatch(mt.away, pm.home)));
+      });
+      if(ex){
+        ex.level = pm.level || ex.level;
+        ex.league = pm.league || ex.league;
+        if(pm.time) ex.time = pm.time;
+        ex.analysis = pm.analysis;
+        updated++;
       } else {
-        foot = '<div class="settle-row">' +
-          '<button class="settle-btn" onclick="settle(' + b.id + ', \'胜\')">实际 胜</button>' +
-          '<button class="settle-btn" onclick="settle(' + b.id + ', \'平\')">实际 平</button>' +
-          '<button class="settle-btn" onclick="settle(' + b.id + ', \'负\')">实际 负</button>' +
-        '</div>';
+        matches.push({ id: pid(), num: pm.n, league: pm.league, time: pm.time, home: pm.home, away: pm.away, win: 0, draw: 0, lose: 0, single: false, level: pm.level, analysis: pm.analysis });
+        created++;
       }
-      return '<div class="bet-item">' + head + foot +
-        '<button class="del" onclick="delBet(' + b.id + ')">×</button></div>';
-    }).join("");
-  }
-
-  // ===== 渲染：统计 =====
-  function renderStat() {
-    var settled = bets.filter(function (b) { return b.result; });
-    var wins = settled.filter(function (b) { return b.pick === b.result; });
-    var totalStake = bets.reduce(function (s, b) { return s + (b.amount || 0); }, 0);
-    var realProfit = settled.reduce(function (s, b) { return s + computeProfit(b); }, 0);
-    var rate = settled.length ? Math.round(wins.length / settled.length * 100) : 0;
-
-    document.getElementById("stat-count").textContent = bets.length;
-    document.getElementById("stat-money").textContent = "¥" + fmt(totalStake);
-    document.getElementById("stat-profit").textContent = (realProfit >= 0 ? "+" : "−") + "¥" + fmt(Math.abs(realProfit));
-
-    document.getElementById("stat-dist").innerHTML =
-      '<div class="bar-row"><div class="name">已结</div>' +
-        '<div class="bar-track"><div class="bar-fill" style="width:' + (bets.length ? settled.length / bets.length * 100 : 0) + '%;background:var(--green);"></div></div>' +
-        '<div class="val">' + settled.length + '</div></div>' +
-      '<div class="bar-row"><div class="name">中奖</div>' +
-        '<div class="bar-track"><div class="bar-fill" style="width:' + (settled.length ? wins.length / settled.length * 100 : 0) + '%;background:var(--win);"></div></div>' +
-        '<div class="val">' + wins.length + '</div></div>' +
-      '<div class="bar-row"><div class="name">胜率</div>' +
-        '<div class="bar-track"><div class="bar-fill" style="width:' + rate + '%;background:var(--draw);"></div></div>' +
-        '<div class="val">' + rate + '%</div></div>';
-  }
-
-  // ===== 工具函数 =====
-  function fmt(n) {
-    return (Math.round(n * 100) / 100).toLocaleString("zh-CN");
-  }
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
+    saveMatches(); renderMatches(); closeImport();
+    toast('✅ 导入 ' + parsed.length + ' 场（新建 ' + created + '，更新 ' + updated + '）');
+  } catch(e){
+    console.error(e);
+    toast('解析失败：' + (e && e.message ? e.message : e));
   }
-  function toast(msg) {
-    var t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    setTimeout(function () { t.classList.remove("show"); }, 1500);
+}
+
+var detailPick = { playType: "had", choice: "", handicap: "-1" };
+function hasOdds(m) { return m.win > 0 && m.draw > 0 && m.lose > 0; }
+function oddsToProb(o) { return o > 0 ? 1/o : 0; }
+function getProbPct(m, type) {
+  if (!hasOdds(m)) return type==="win"?38:(type==="draw"?34:28);
+  var tw = oddsToProb(m.win), td = oddsToProb(m.draw), tl = oddsToProb(m.lose), total = tw+td+tl;
+  if (total<=0) return 33;
+  var p = type==="win"?tw:(type==="draw"?td:tl);
+  return Math.round(p/total*100);
+}
+function calcEV(m, type) { if (!hasOdds(m)) return 0; var o = type==="win"?m.win:(type==="draw"?m.draw:m.lose); return (getProbPct(m,type)/100 * o - 1) * 100; }
+function levelColor(lv) { return lv<=2?"var(--brand)":(lv===3?"var(--draw)":(lv===4?"#ea580c":"var(--red)")); }
+
+function renderDetail(matchId) {
+  var m = matches.find(function(x){ return x.id === matchId; });
+  if (!m) { toast("比赛数据丢失"); goBack(); return; }
+  detailPick = { playType: "had", choice: "", handicap: "-1" };
+  var a = m.analysis || {}, lv = a.level || 0;
+  var container = document.getElementById("detail-content");
+  var importHtml = (a.importRec || a.importRisk) ?
+    '<div class="import-box"><h4>📥 导入的分析</h4>' +
+    (a.importRec ? '<div class="rec">推荐：'+esc(a.importRec)+'</div>' : '') +
+    (a.importRisk ? '<div class="risk">⚠️ '+esc(a.importRisk)+'</div>' : '') +
+    '</div>' : '';
+  container.innerHTML =
+    '<button class="back-btn" onclick="goBack()">← 返回赛事板</button>' +
+    '<div class="card">' +
+      '<div class="detail-header"><div><span class="detail-match-num">'+esc(m.num||"自定义")+'</span> <span class="detail-league">'+esc(m.league||"")+'</span></div><div><span class="detail-time">'+esc(m.time||"")+'</span></div></div>' +
+      '<div class="detail-title">'+esc(m.home||"?")+' <span style="font-weight:400;color:var(--muted);">VS</span> '+esc(m.away||"?")+'</div>' +
+      (hasOdds(m) ?
+        '<h3 style="margin-top:8px;">📊 概率分布（赔率反推）</h3>' +
+        probRow("pw","胜","bw","win",m) + probRow("pd","平","bd","draw",m) + probRow("pl","负","bl","lose",m) +
+        '<div class="ev-row">主胜 <span class="ev-val '+(calcEV(m,'win')>=0?'ev-pos':'ev-neg')+'">EV '+(calcEV(m,'win')>=0?'+':'')+calcEV(m,'win').toFixed(1)+'%</span>' +
+        ' &nbsp; 平 <span class="ev-val '+(calcEV(m,'draw')>=0?'ev-pos':'ev-neg')+'">EV '+(calcEV(m,'draw')>=0?'+':'')+calcEV(m,'draw').toFixed(1)+'%</span>' +
+        ' &nbsp; 客胜 <span class="ev-val '+(calcEV(m,'lose')>=0?'ev-pos':'ev-neg')+'">EV '+(calcEV(m,'lose')>=0?'+':'')+calcEV(m,'lose').toFixed(1)+'%</span></div>'
+        : '<p class="hint">填了赔率后会自动显示概率分布和EV。</p>') +
+    '</div>' +
+    importHtml +
+    '<div class="card">' +
+      '<h2>🧠 分析工作表 <span style="font-size:11px;color:var(--muted);font-weight:400;">（基于你的喂养文档）</span></h2>' +
+      '<div class="layer-box"><div class="layer-title">第一层 · 基本面独立判断</div>' +
+        '<div class="field"><label>首回合比分 / 进程</label><input id="l1-firstleg" value="'+esc(a.l1?a.l1.firstleg||"":"")+'"></div>' +
+        '<div class="field"><label>近期状态（近10场 xG/进球/失球）</label><input id="l1-form" value="'+esc(a.l1?a.l1.form||"":"")+'"></div>' +
+        '<div class="field"><label>伤停</label><input id="l1-inj" value="'+esc(a.l1?a.l1.inj||"":"")+'"></div>' +
+        '<div class="field"><label>身价差（倍数）</label><input id="l1-val" value="'+esc(a.l1?a.l1.val||"":"")+'"></div>' +
+        '<div class="field"><label>独立判断概率（主/平/客 %）</label><input id="l1-prob" value="'+esc(a.l1?a.l1.prob||"":"")+'" placeholder="如 45, 28, 27"></div>' +
+      '</div>' +
+      '<div class="layer-box"><div class="layer-title">第二层 · 盘口 + 媒体校验</div>' +
+        '<div class="field"><label>欧赔初盘 → 即时（主/平/客）</label><input id="l2-euro" value="'+esc(a.l2?a.l2.euro||"":"")+'"></div>' +
+        '<div class="field"><label>亚盘变动</label><input id="l2-asian" value="'+esc(a.l2?a.l2.asian||"":"")+'"></div>' +
+        '<div class="field"><label>竞彩 vs 主流背离</label><input id="l2-div" value="'+esc(a.l2?a.l2.div||"":"")+'"></div>' +
+        '<div class="field"><label>凯利临界检测</label><input id="l2-kelly" value="'+esc(a.l2?a.l2.kelly||"":"")+'"></div>' +
+        '<div class="field"><label>信号判定</label><select id="l2-signal"><option value="">-- 选择 --</option><option value="真强势"'+(a.l2&&a.l2.signal==="真强势"?' selected':'')+'>真强势</option><option value="诱盘"'+(a.l2&&a.l2.signal==="诱盘"?' selected':'')+'>诱盘</option></select></div>' +
+      '</div>' +
+      '<div class="layer-box"><div class="layer-title">第三层 · BFDS 五维风险评分</div>' +
+        bfdsDim("①基准偏离","25%","d1", a.bfds?a.bfds.d1:3, "实际主胜vs基准：>+25%→5, +15%→4, ±5%→1, -10%→2") +
+        bfdsDim("②盘口形态","20%","d2", a.bfds?a.bfds.d2:3, "单边强走势>10%→3-4, 反转/触底→4, 波动<5%→2") +
+        bfdsDim("③凯利离散","20%","d3", a.bfds?a.bfds.d3:2, "主胜>0.95→4, 客胜<0.85→4, 三项均0.83-0.92→2") +
+        bfdsDim("④资金结构","20%","d4", a.bfds?a.bfds.d4:2, "注数热/金额冷背离→4, 同向共识→2") +
+        bfdsDim("⑤风险标签","15%","d5", a.bfds?a.bfds.d5:1, "每命中1个高权重标签+1分") +
+        '<div class="level-result" id="level-result" style="background:'+(lv?levelColor(lv):'var(--card2)')+';">' +
+          (lv ? '<div class="level-num" style="color:#fff;">Level '+lv+'</div><div class="level-cmd" style="color:#fff;">'+levelCmd(lv)+'</div>' : '<div class="level-num" style="color:var(--muted);">—</div><div class="level-cmd" style="color:var(--muted);">填完五维自动算等级</div>') +
+        '</div>' +
+      '</div>' +
+      '<div class="field"><label>校准规则触发清单</label><div class="cal-list" id="cal-list">' +
+        CALIBRATIONS.map(function(c, i){ var on = a.calibrations && a.calibrations.indexOf(i+1)>=0; return '<label class="cal-item'+(on?' on':'')+'" onclick="toggleCal('+(i+1)+',this)"><input type="checkbox" '+(on?'checked':'')+' onchange="event.stopPropagation()"> <span class="ct">校准'+(i+1)+'：'+esc(c)+'</span></label>'; }).join("") +
+      '</div></div>' +
+      '<button class="btn-primary" onclick="saveAnalysis()">💾 保存分析</button>' +
+    '</div>' +
+    '<div class="card">' +
+      '<h2>✏️ 选择方案</h2>' +
+      (matchTickets(m.id).length ? '<div class="analysis-saved">本场已记录 <span class="lv">'+matchTickets(m.id).length+'</span> 个单关方案（账本里查看/结算）</div>' : '') +
+      '<div class="play-tabs" id="play-tabs">' +
+        PLAY_TYPES.map(function(p){ return '<button class="play-tab'+(p.key==="had"?' active':'')+'" onclick="switchPlay(\''+p.key+'\',this)">'+p.label+'</button>'; }).join("") +
+      '</div>' +
+      '<div id="play-options"></div>' +
+      '<div class="field" id="handicap-field" style="display:none;"><label>让球数</label><select id="d-handicap" onchange="detailPick.handicap=this.value"><option value="-1">让1球 (-1)</option><option value="-2">让2球 (-2)</option><option value="1">受让1球 (+1)</option><option value="2">受让2球 (+2)</option></select></div>' +
+      '<div class="field"><label>赔率</label><input type="number" id="d-odds" step="0.01" min="1" placeholder="'+(m.win>0?('默认 '+m.win.toFixed(2)):'如 2.10')+'"></div>' +
+      '<div class="field"><label>金额（元）</label><input type="number" id="d-amount" step="1" min="1" placeholder="如 100"></div>' +
+      '<div class="field"><label>备注（可选）</label><textarea id="d-note" placeholder="如：来自分析工作表 Level2"></textarea></div>' +
+      '<button class="btn-primary" onclick="saveBetFromDetail()">📝 记一笔</button>' +
+    '</div>';
+  renderPlayOptions("had");
+}
+function probRow(cls, label, bg, type, m) {
+  var pct = getProbPct(m, type);
+  return '<div class="prob-row"><span class="prob-label '+cls+'">'+label+'</span><div class="prob-track"><div class="prob-fill '+bg+'" style="width:'+pct+'%"></div></div><span class="prob-pct">'+pct+'%</span></div>';
+}
+function bfdsDim(name, weight, key, val, crit) {
+  var opts = ""; for (var i=1;i<=5;i++) opts += '<option value="'+i+'"'+(i===val?' selected':'')+'>'+i+'</option>';
+  return '<div class="bfds-dim"><span class="bn">'+name+'</span><select onchange="updateLevel()">'+opts+'</select><span class="bw">'+weight+'</span></div><div class="bfds-crit">'+crit+'</div>';
+}
+function levelCmd(lv) { return lv<=2 ? "正常仓位" : (lv===3 ? "中仓位，2串1最多进1场" : (lv===4 ? "最小仓位≤1%，禁止进串关" : "跳过不参与")); }
+function updateLevel() {
+  var sels = document.querySelectorAll("#view-detail .bfds-dim select"); if (sels.length < 5) return;
+  var lw = sels[0].value*0.25 + sels[1].value*0.20 + sels[2].value*0.20 + sels[3].value*0.20 + sels[4].value*0.15;
+  var lv = lw>=4 ? 5 : (lw>=3.5 ? 4 : (lw>=3.0 ? 3 : (lw>=2.5 ? 2 : 1)));
+  var box = document.getElementById("level-result");
+  if (box) { box.style.background = levelColor(lv); box.innerHTML = '<div class="level-num" style="color:#fff;">Level '+lv+'</div><div class="level-cmd" style="color:#fff;">'+levelCmd(lv)+'</div>'; }
+}
+function toggleCal(n, el) { var cb = el.querySelector("input"); cb.checked = !cb.checked; if (cb.checked) el.classList.add("on"); else el.classList.remove("on"); }
+function saveAnalysis() {
+  var m = matches.find(function(x){ return x.id === currentMatchId; }); if (!m) { toast("比赛数据丢失"); return; }
+  var sels = document.querySelectorAll("#view-detail .bfds-dim select");
+  var lw = sels[0].value*0.25 + sels[1].value*0.20 + sels[2].value*0.20 + sels[3].value*0.20 + sels[4].value*0.15;
+  var lv = lw>=4 ? 5 : (lw>=3.5 ? 4 : (lw>=3.0 ? 3 : (lw>=2.5 ? 2 : 1)));
+  var cals = []; document.querySelectorAll("#cal-list .cal-item input").forEach(function(cb, i){ if (cb.checked) cals.push(i+1); });
+  m.analysis = {
+    l1: { firstleg: gv("l1-firstleg"), form: gv("l1-form"), inj: gv("l1-inj"), val: gv("l1-val"), prob: gv("l1-prob") },
+    l2: { euro: gv("l2-euro"), asian: gv("l2-asian"), div: gv("l2-div"), kelly: gv("l2-kelly"), signal: gv("l2-signal") },
+    bfds: { d1:+sels[0].value, d2:+sels[1].value, d3:+sels[2].value, d4:+sels[3].value, d5:+sels[4].value },
+    calibrations: cals, level: lv, position: levelCmd(lv),
+    importRec: m.analysis && m.analysis.importRec, importRisk: m.analysis && m.analysis.importRisk
+  };
+  saveMatches(); toast("分析已保存 ✓ Level " + lv); renderDetail(currentMatchId);
+}
+function gv(id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; }
+
+function switchPlay(key, btn) {
+  document.querySelectorAll("#play-tabs .play-tab").forEach(function(b){ b.classList.remove("active"); });
+  btn.classList.add("active"); detailPick.playType = key; detailPick.choice = ""; renderPlayOptions(key);
+}
+function renderPlayOptions(key) {
+  var box = document.getElementById("play-options");
+  var pt = PLAY_TYPES.find(function(p){ return p.key === key; });
+  var opts = key === "score" ? SCORE_OPTS : pt.opts;
+  document.getElementById("handicap-field").style.display = pt.needHandicap ? "" : "none";
+  if (key === "score") box.innerHTML = '<div class="opt-grid nine">' + opts.map(function(o){ return '<button type="button" class="opt-btn score" data-opt="'+o+'" onclick="pickOpt(this)">'+o+'</button>'; }).join("") + '</div>';
+  else box.innerHTML = '<div class="opt-grid'+(opts.length>3?' nine':'')+'">' + opts.map(function(o){ return '<button type="button" class="opt-btn" data-opt="'+o+'" onclick="pickOpt(this)">'+o+'</button>'; }).join("") + '</div>';
+}
+function pickOpt(el) { el.parentNode.querySelectorAll("button").forEach(function(b){ b.classList.remove("active"); }); el.classList.add("active"); detailPick.choice = el.getAttribute("data-opt"); }
+function matchTickets(matchId) { return tickets.filter(function(t){ return t.type==="single" && t.legs[0] && t.legs[0].matchId === matchId; }); }
+function saveBetFromDetail() {
+  var m = matches.find(function(x){ return x.id === currentMatchId; }); if (!m) { toast("比赛数据丢失"); return; }
+  var odds = parseFloat(document.getElementById("d-odds").value), amount = parseFloat(document.getElementById("d-amount").value), note = document.getElementById("d-note").value.trim();
+  if (!detailPick.choice) { toast("请选择具体方案"); return; }
+  if (!(odds >= 1)) { toast("赔率要 ≥ 1"); return; }
+  if (!(amount > 0)) { toast("金额要 > 0"); return; }
+  var choiceText = detailPick.choice; if (detailPick.playType === "hhad") choiceText = "让" + detailPick.handicap + " " + detailPick.choice;
+  createTicket({
+    type: "single",
+    legs: [{ matchId: currentMatchId, num: m.num || "", home: m.home, away: m.away, league: m.league || "", playType: detailPick.playType, choice: choiceText, handicap: detailPick.handicap, odds: odds }],
+    multiple: 1, stake: amount, note: note
+  });
+  toast("记一笔成功 ✓");
+  detailPick.choice = ""; document.getElementById("d-odds").value=""; document.getElementById("d-amount").value=""; document.getElementById("d-note").value="";
+  document.querySelectorAll("#play-options button").forEach(function(b){ b.classList.remove("active"); });
+  renderDetail(currentMatchId);
+}
+
+function ticketTotalOdds(t) { return t.legs.reduce(function(p, l){ return p * (l.odds || 0); }, 1); }
+function ticketPayout(t) { if (t.status !== "won") return 0; return t.stake * ticketTotalOdds(t) * (t.multiple || 1); }
+function ticketProfit(t) { if (t.status === "") return 0; return ticketPayout(t) - t.stake; }
+function legPlayType(t) { return (t.type === "single" && t.legs[0]) ? t.legs[0].playType : "combo"; }
+
+function capitalStats() {
+  var principal = capital.principal || 0;
+  var totalStake = tickets.reduce(function(s, t){ return s + (t.stake || 0); }, 0);
+  var wonTickets = tickets.filter(function(t){ return t.status === "won"; });
+  var totalPayout = wonTickets.reduce(function(s, t){ return s + ticketPayout(t); }, 0);
+  var net = totalPayout - totalStake;
+  var balance = principal - totalStake + totalPayout;
+  var roi = principal > 0 ? net / principal * 100 : 0;
+  var settled = tickets.filter(function(t){ return t.status !== ""; });
+  var wins = settled.filter(function(t){ return t.status === "won"; }).length;
+  var winRate = settled.length ? wins / settled.length * 100 : 0;
+  return { principal: principal, totalStake: totalStake, totalPayout: totalPayout, net: net, balance: balance, roi: roi, winRate: winRate, settled: settled.length, wins: wins };
+}
+
+function renderBets() {
+  var box = document.getElementById("bet-content");
+  if (!box) return;
+  var s = capitalStats();
+  var capHtml =
+    '<div class="capital-card">' +
+      '<div class="capital-top"><div><div class="capital-label">账户余额</div><div class="capital-balance '+(s.balance>=0?'pos':'neg')+'">'+(s.balance>=0?'+':'−')+'¥'+fmt(Math.abs(s.balance))+'</div></div>' +
+      '<button class="capital-edit" onclick="openCapital()">本金 '+(s.principal>0?('¥'+fmt(s.principal)):'设置')+'</button></div>' +
+      '<div class="mini-grid">' +
+        '<div class="mini"><div class="mini-num gold">¥'+fmt(s.totalStake)+'</div><div class="mini-label">累计投入</div></div>' +
+        '<div class="mini"><div class="mini-num green">¥'+fmt(s.totalPayout)+'</div><div class="mini-label">累计派奖</div></div>' +
+        '<div class="mini"><div class="mini-num '+(s.net>=0?'green':'red')+'">'+(s.net>=0?'+':'−')+fmt(Math.abs(s.net))+'</div><div class="mini-label">净盈亏</div></div>' +
+        '<div class="mini"><div class="mini-num '+(s.roi>=0?'green':'red')+'">'+(s.roi>=0?'+':'')+s.roi.toFixed(1)+'%</div><div class="mini-label">收益率ROI</div></div>' +
+      '</div>' +
+      '<button class="btn-gold" style="margin-top:12px;" onclick="openTicket()">➕ 新增方案</button>' +
+    '</div>';
+  var statsHtml = renderStats(s);
+  var listHtml = renderTicketList();
+  box.innerHTML = capHtml + statsHtml + listHtml;
+}
+
+function renderStats(s) {
+  var byPlay = {};
+  tickets.forEach(function(t){
+    if (t.status === "") return;
+    var key = legPlayType(t);
+    if (!byPlay[key]) byPlay[key] = { stake: 0, profit: 0, count: 0, win: 0 };
+    byPlay[key].stake += t.stake; byPlay[key].profit += ticketProfit(t); byPlay[key].count++;
+    if (t.status === "won") byPlay[key].win++;
+  });
+  var maxAbs = 1;
+  Object.keys(byPlay).forEach(function(k){ maxAbs = Math.max(maxAbs, Math.abs(byPlay[k].profit)); });
+  var playRows = Object.keys(byPlay).length ? Object.keys(byPlay).map(function(k){
+    var d = byPlay[k]; var pct = Math.abs(d.profit) / maxAbs * 100;
+    var color = d.profit >= 0 ? "var(--green)" : "var(--red)";
+    var name = k === "combo" ? "串关" : PLAY_LABEL[k];
+    return '<div class="play-stat-row"><div class="play-stat-name">'+name+'</div>' +
+      '<div class="play-stat-bar"><div class="play-stat-fill" style="width:'+pct+'%;background:'+color+';"></div></div>' +
+      '<div class="play-stat-val"> '+(d.profit>=0?'+':'−')+'¥'+fmt(Math.abs(d.profit))+' · '+(d.count?Math.round(d.win/d.count*100):0)+'%</div></div>';
+  }).join("") : '<div class="empty" style="padding:14px 0;">结算后显示玩法分布</div>';
+
+  var ordered = tickets.slice().sort(function(a, b){ return (a.date < b.date ? -1 : (a.date > b.date ? 1 : (a.id < b.id ? -1 : 1))); });
+  var curWin = 0, curLose = 0, maxWin = 0, maxLose = 0, pw = 0, pl = 0;
+  ordered.forEach(function(t){ if (t.status === "won") { curWin++; curLose = 0; maxWin = Math.max(maxWin, curWin); } else if (t.status === "lost") { curLose++; curWin = 0; maxLose = Math.max(maxLose, curLose); } });
+  pw = curWin; pl = curLose;
+
+  var curve = profitCurveSVG(ordered);
+
+  return '<div class="stat-card"><h3>📈 按玩法盈亏</h3>'+playRows+'</div>' +
+    '<div class="stat-card"><h3>🔥 连红 / 连黑</h3><div class="streak-box">' +
+      '<div class="streak-item"><div class="streak-num win">'+pw+'</div><div class="mini-label">当前连红</div></div>' +
+      '<div class="streak-item"><div class="streak-num win">'+maxWin+'</div><div class="mini-label">最长连红</div></div>' +
+      '<div class="streak-item"><div class="streak-num lose">'+pl+'</div><div class="mini-label">当前连黑</div></div>' +
+      '<div class="streak-item"><div class="streak-num lose">'+maxLose+'</div><div class="mini-label">最长连黑</div></div>' +
+    '</div></div>' +
+    '<div class="stat-card"><h3>📉 盈亏曲线（按时间）</h3>'+curve+'</div>';
+}
+
+function profitCurveSVG(ordered) {
+  var cum = 0, pts = [{ x: 0, y: 0 }], vals = [0];
+  ordered.forEach(function(t, i){
+    if (t.status === "") return;
+    cum += ticketProfit(t); vals.push(cum); pts.push({ x: i + 1, y: cum });
+  });
+  if (pts.length < 2) return '<div class="empty" style="padding:14px 0;">结算后显示曲线</div>';
+  var W = 300, H = 70, pad = 6;
+  var maxV = Math.max.apply(null, vals), minV = Math.min.apply(null, vals);
+  var range = (maxV - minV) || 1;
+  var n = pts.length - 1;
+  function sx(i){ return pad + i / n * (W - 2 * pad); }
+  function sy(v){ return pad + (1 - (v - minV) / range) * (H - 2 * pad); }
+  var d = pts.map(function(p, i){ return (i === 0 ? "M" : "L") + sx(p.x).toFixed(1) + " " + sy(p.y).toFixed(1); }).join(" ");
+  var last = pts[pts.length - 1];
+  var color = cum >= 0 ? "var(--green)" : "var(--red)";
+  var zeroY = sy(0);
+  return '<svg class="curve-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">' +
+    '<line x1="0" y1="'+zeroY.toFixed(1)+'" x2="'+W+'" y2="'+zeroY.toFixed(1)+'" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>' +
+    '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round"/>' +
+    '<circle cx="'+sx(last.x).toFixed(1)+'" cy="'+sy(last.y).toFixed(1)+'" r="3" fill="'+color+'"/></svg>' +
+    '<div style="text-align:right;font-size:12px;color:var(--muted);margin-top:4px;">累计 '+(cum>=0?'+':'−')+'¥'+fmt(Math.abs(cum))+'</div>';
+}
+
+function renderTicketList() {
+  if (!tickets.length) return '<div class="empty">还没有方案<br><br>👆 点「➕ 新增方案」或在比赛里记一笔</div>';
+  return tickets.map(function(t) {
+    var typeBadge = t.type === "single" ? '<span class="ticket-type single">单关</span>' : '<span class="ticket-type combo">串关 '+t.legs.length+'关</span>';
+    var legsHtml = t.legs.map(function(l){
+      var pt = l.playType ? ('<span class="badge pt-'+l.playType+'">'+PLAY_LABEL[l.playType]+'</span>') : '';
+      return '<div class="leg"><span class="ln">'+esc(l.num||"")+'</span><span class="lv">'+esc(l.home||"?")+' vs '+esc(l.away||"?")+'</span></div>' +
+        '<div class="leg" style="padding-top:0;"><span class="ln"></span>'+pt+'<span class="lv" style="margin-left:2px;">'+esc(l.choice||"")+'</span><span class="lo"> @'+fmt(l.odds||0)+'</span></div>';
+    }).join("");
+    var oddsTxt = t.type === "combo" ? ('组合赔率 ' + fmt(ticketTotalOdds(t) * (t.multiple||1))) : ('赔率 ' + fmt(t.legs[0].odds||0));
+    var foot;
+    if (t.status) {
+      var isWin = t.status === "won";
+      foot = '<div class="ticket-foot"><span class="badge '+(isWin?"win":"lose")+'">'+(isWin?"中奖":"失败")+'</span>' +
+        '<span class="profit '+(ticketProfit(t)>=0?"pos":"neg")+'">盈亏 '+(ticketProfit(t)>=0?"+":"−")+"¥"+fmt(Math.abs(ticketProfit(t)))+'</span></div>' +
+        '<div class="settle-row"><button class="re-settle" style="flex:1;text-align:left;" onclick="unsettleTicket(\''+t.id+'\')">修改结果</button></div>';
+    } else {
+      foot = '<div class="settle-row"><button class="settle-btn" style="color:var(--green);" onclick="settleTicket(\''+t.id+'\',\'won\')">✅ 中奖</button><button class="settle-btn" style="color:var(--red);" onclick="settleTicket(\''+t.id+'\',\'lost\')">❌ 失败</button></div>';
+    }
+    return '<div class="ticket">'+typeBadge+'<span class="ticket-stake" style="float:right;">¥'+fmt(t.stake)+(t.multiple>1?(' ×'+t.multiple):'')+'</span>' +
+      '<div style="clear:both;"></div>'+legsHtml +
+      '<div class="ticket-stake" style="margin-top:6px;">'+oddsTxt+(t.note?' · '+esc(t.note):'')+' · '+esc(t.date||"")+'</div>' +
+      foot + '<button class="del" onclick="delTicket(\''+t.id+'\')">×</button></div>';
+  }).join("");
+}
+
+function createTicket(opts) {
+  var t = { id: pid(), date: opts.date || todayStr(), type: opts.type, legs: opts.legs, multiple: opts.multiple || 1, stake: opts.stake, status: "", note: opts.note || "" };
+  tickets.unshift(t); saveTickets();
+}
+function settleTicket(id, status) {
+  for (var i=0;i<tickets.length;i++){ if (tickets[i].id===id){ tickets[i].status = status; break; } }
+  saveTickets(); renderBets(); toast(status==="won"?"🎉 中奖！":"未中奖");
+}
+function unsettleTicket(id) { for (var i=0;i<tickets.length;i++){ if (tickets[i].id===id){ tickets[i].status=""; break; } } saveTickets(); renderBets(); }
+function delTicket(id) { if (!confirm("确定删除这条方案？")) return; tickets = tickets.filter(function(t){ return t.id !== id; }); saveTickets(); renderBets(); toast("已删除"); }
+
+var tkType = "single", tkPick = { playType: "had", choice: "", handicap: "-1" };
+function openTicket() {
+  var sel = document.getElementById("tk-match");
+  sel.innerHTML = matches.map(function(m){ return '<option value="'+m.id+'">'+esc((m.num?m.num+" ":"")+m.home+" vs "+m.away)+'</option>'; }).join("") || '<option value="">（先在赛事页添加比赛）</option>';
+  tkType = "single"; setTkType("single", document.getElementById("seg-single"));
+  renderTkPlayOptions("had");
+  renderComboList();
+  document.getElementById("ticket-modal").classList.add("show");
+}
+function closeTicket() { document.getElementById("ticket-modal").classList.remove("show"); }
+function setTkType(type, btn) {
+  tkType = type;
+  document.getElementById("seg-single").classList.toggle("active", type==="single");
+  document.getElementById("seg-combo").classList.toggle("active", type==="combo");
+  document.getElementById("single-sec").style.display = type==="single" ? "" : "none";
+  document.getElementById("combo-sec").style.display = type==="combo" ? "" : "none";
+}
+function renderTkPlayOptions(key) {
+  var box = document.getElementById("tk-play-tabs");
+  box.innerHTML = PLAY_TYPES.map(function(p){ return '<button class="play-tab'+(p.key===key?' active':'')+'" onclick="tkSwitchPlay(\''+p.key+'\',this)">'+p.label+'</button>'; }).join("");
+  tkPick = { playType: key, choice: "", handicap: "-1" };
+  var pt = PLAY_TYPES.find(function(p){ return p.key === key; });
+  var opts = key === "score" ? SCORE_OPTS : pt.opts;
+  document.getElementById("tk-handicap-field").style.display = pt.needHandicap ? "" : "none";
+  var ob = document.getElementById("tk-options");
+  if (key === "score") ob.innerHTML = '<div class="opt-grid nine">' + opts.map(function(o){ return '<button type="button" class="opt-btn score" data-opt="'+o+'" onclick="tkPickOpt(this)">'+o+'</button>'; }).join("") + '</div>';
+  else ob.innerHTML = '<div class="opt-grid'+(opts.length>3?' nine':'')+'">' + opts.map(function(o){ return '<button type="button" class="opt-btn" data-opt="'+o+'" onclick="tkPickOpt(this)">'+o+'</button>'; }).join("") + '</div>';
+}
+function tkSwitchPlay(key, btn) { document.querySelectorAll("#tk-play-tabs .play-tab").forEach(function(b){ b.classList.remove("active"); }); btn.classList.add("active"); renderTkPlayOptions(key); }
+function tkPickOpt(el) { el.parentNode.querySelectorAll("button").forEach(function(b){ b.classList.remove("active"); }); el.classList.add("active"); tkPick.choice = el.getAttribute("data-opt"); }
+
+function renderComboList() {
+  var list = document.getElementById("tk-combo-list");
+  list.innerHTML = matches.map(function(m){
+    return '<label class="chk-row"><input type="checkbox" value="'+m.id+'" onchange="renderComboLegs()"><span class="cn">'+(m.num?m.num+" ":"")+esc(m.home)+' vs '+esc(m.away)+'</span></label>';
+  }).join("") || '<div class="empty" style="padding:10px 0;">先在赛事页添加比赛</div>';
+  document.getElementById("tk-combo-legs").innerHTML = "";
+}
+function renderComboLegs() {
+  var checked = Array.prototype.slice.call(document.querySelectorAll("#tk-combo-list input:checked"));
+  var box = document.getElementById("tk-combo-legs");
+  box.innerHTML = checked.map(function(cb){
+    var m = matches.find(function(x){ return x.id === cb.value; }); if (!m) return "";
+    return '<div class="combo-leg" data-mid="'+m.id+'">' +
+      '<div class="combo-leg-h">'+(m.num?m.num+" ":"")+esc(m.home)+' vs '+esc(m.away)+'</div>' +
+      '<div class="combo-leg-body">' +
+        '<select class="cl-play" onchange="clPlayChange(this)"><option value="had">胜平负</option><option value="hhad">让球</option><option value="hf">半全场</option><option value="score">比分</option></select>' +
+        '<select class="cl-choice"></select>' +
+        '<input class="cl-odds" type="number" step="0.01" min="1" placeholder="赔率">' +
+      '</div></div>';
+  }).join("");
+  box.querySelectorAll(".combo-leg").forEach(function(row){ clPlayChange(row.querySelector(".cl-play")); });
+}
+function clPlayChange(sel) {
+  var row = sel.parentNode.parentNode;
+  var choice = row.querySelector(".cl-choice");
+  var key = sel.value;
+  var opts = key === "score" ? SCORE_OPTS : PLAY_TYPES.find(function(p){ return p.key === key; }).opts;
+  choice.innerHTML = opts.map(function(o){ return '<option value="'+o+'">'+o+'</option>'; }).join("");
+}
+
+function saveTicket() {
+  if (tkType === "single") {
+    var mid = document.getElementById("tk-match").value;
+    var m = matches.find(function(x){ return x.id === mid; }); if (!m) { toast("请先选择比赛"); return; }
+    var odds = parseFloat(document.getElementById("tk-odds").value), amount = parseFloat(document.getElementById("tk-amount").value), note = document.getElementById("tk-note").value.trim();
+    if (!tkPick.choice) { toast("请选择方案"); return; }
+    if (!(odds >= 1)) { toast("赔率要 ≥ 1"); return; }
+    if (!(amount > 0)) { toast("金额要 > 0"); return; }
+    var choiceText = tkPick.choice; if (tkPick.playType === "hhad") choiceText = "让" + tkPick.handicap + " " + tkPick.choice;
+    createTicket({ type: "single", legs: [{ matchId: mid, num: m.num || "", home: m.home, away: m.away, league: m.league || "", playType: tkPick.playType, choice: choiceText, handicap: tkPick.handicap, odds: odds }], multiple: 1, stake: amount, note: note });
+    toast("单关已保存 ✓"); closeTicket(); renderBets();
+  } else {
+    var checked = Array.prototype.slice.call(document.querySelectorAll("#tk-combo-list input:checked"));
+    if (checked.length < 2) { toast("串关至少选 2 场"); return; }
+    var legs = [], ok = true;
+    checked.forEach(function(cb){
+      var row = document.querySelector('.combo-leg[data-mid="'+cb.value+'"]'); if (!row) { ok = false; return; }
+      var m = matches.find(function(x){ return x.id === cb.value; });
+      var play = row.querySelector(".cl-play").value, choice = row.querySelector(".cl-choice").value, odds = parseFloat(row.querySelector(".cl-odds").value);
+      if (!(odds >= 1)) { ok = false; return; }
+      legs.push({ matchId: cb.value, num: m.num || "", home: m.home, away: m.away, league: m.league || "", playType: play, choice: choice, handicap: "", odds: odds });
+    });
+    if (!ok) { toast("每场都要填赔率且 ≥ 1"); return; }
+    var mult = parseInt(document.getElementById("tk-multiple").value, 10) || 1;
+    var stake = parseFloat(document.getElementById("tk-amount-combo").value);
+    var note = document.getElementById("tk-note-combo").value.trim();
+    if (!(stake > 0)) { toast("总投入要 > 0"); return; }
+    createTicket({ type: "combo", legs: legs, multiple: mult, stake: stake, note: note });
+    toast("串关已保存 ✓"); closeTicket(); renderBets();
+  }
+}
+
+function openCapital() { document.getElementById("cap-input").value = capital.principal || ""; document.getElementById("capital-modal").classList.add("show"); }
+function closeCapital() { document.getElementById("capital-modal").classList.remove("show"); }
+function saveCapital() {
+  var v = parseFloat(document.getElementById("cap-input").value);
+  capital.principal = isNaN(v) || v < 0 ? 0 : v;
+  saveCapitalD(); closeCapital(); renderBets(); toast("本金已保存 ✓");
+}
+
+(function init() {
+  matches = loadMatches();
+  tickets = loadTickets();
+  capital = loadCapital();
+
+  if (tickets.length === 0) {
+    try {
+      var old = JSON.parse(localStorage.getItem("jc_bets_v2")) || [];
+      if (old.length) {
+        old.forEach(function(b){
+          var ha = (b.matchName || "").split(" vs ");
+          tickets.push({
+            id: pid(), date: b.date || todayStr(), type: "single",
+            legs: [{ matchId: b.matchId || "", num: b.matchNum || "", home: ha[0] || "", away: ha[1] || "", league: b.league || "", playType: b.playType || "had", choice: b.choice || "", handicap: b.handicap || "", odds: b.odds || 0 }],
+            multiple: 1, stake: b.amount || 0,
+            status: b.result === "中奖" ? "won" : (b.result === "失败" ? "lost" : ""), note: b.note || ""
+          });
+        });
+        saveTickets();
+      }
+    } catch(e) {}
   }
 
-  // ===== 启动 =====
-  seedIfNeeded();
-  bets = load();
-  (function initDate() {
-    var d = new Date().toISOString().slice(0, 10);
-    document.getElementById("f-date").value = d;
-  })();
-  renderAnalysis();
-  renderHome();
-  refreshResults(true);
+  if (matches.length === 0) {
+    matches = [
+      { id:pid(), num:"周三001", league:"欧冠资格赛", time:"今晚 23:00", home:"凯拉特", away:"奥莫尼亚", win:2.35, draw:3.20, lose:2.90, single:false, analysis:null },
+      { id:pid(), num:"周三002", league:"欧冠资格赛", time:"今晚(次回合)", home:"帕纳辛奈科斯", away:"萨格勒布迪纳摩", win:2.10, draw:3.40, lose:3.25, single:true, analysis:null },
+      { id:pid(), num:"周三003", league:"欧联杯", time:"明天 02:00", home:"阿贾克斯", away:"帕纳辛奈科斯", win:1.85, draw:3.60, lose:4.00, single:false, analysis:null },
+      { id:pid(), num:"周三004", league:"英超", time:"明天 21:00", home:"曼城", away:"热刺", win:1.90, draw:3.70, lose:3.80, single:false, analysis:null },
+      { id:pid(), num:"周三005", league:"西甲", time:"明天 23:00", home:"皇马", away:"巴萨", win:2.20, draw:3.40, lose:3.00, single:true, analysis:null },
+      { id:pid(), num:"周三006", league:"意甲", time:"后天 02:45", home:"国际米兰", away:"尤文图斯", win:2.05, draw:3.30, lose:3.45, single:false, analysis:null }
+    ];
+    saveMatches();
+  }
+
+  var openMatchId = localStorage.getItem("jc_open_match");
+  if (openMatchId) {
+    localStorage.removeItem("jc_open_match");
+    var t = matches.find(function(m){ return m.id === openMatchId; });
+    if (t) { openDetail(openMatchId); return; }
+  }
+  renderMatches();
+})();
 </script>
 </body>
 </html>
